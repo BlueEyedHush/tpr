@@ -6,17 +6,29 @@
 #define MSG_CONF(SIZE) {SIZE, 100000000/SIZE} // total size always 10^8
 #define NUM_MSG_CONFS 12
 int msg_confs[][2] = {MSG_CONF(1),
-                               MSG_CONF(4),
-                               MSG_CONF(16),
-                               MSG_CONF(64),
-                               MSG_CONF(128),
-                               MSG_CONF(512),
-                               MSG_CONF(2048),
-                               MSG_CONF(4096),
-                               MSG_CONF(8192),
-                               MSG_CONF(16384),
-                               MSG_CONF(32768),
-                               MSG_CONF(65536)};
+                      MSG_CONF(4),
+                      MSG_CONF(16),
+                      MSG_CONF(64),
+                      MSG_CONF(128),
+                      MSG_CONF(512),
+                      MSG_CONF(2048),
+                      MSG_CONF(4096),
+                      MSG_CONF(8192),
+                      MSG_CONF(16384),
+                      MSG_CONF(32768),
+                      MSG_CONF(65536)};
+
+void pong_main() {
+    int number = -1;
+    printf("Process 0 sent number %d\n", number);
+    MPI_Send(&number, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+}
+
+void ping_main() {
+    int number = 0;
+    MPI_Recv(&number, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    printf("Process 1 received number %d from process 0\n", number);
+}
 
 int main(int argc, char **argv) {
     MPI_Init(NULL, NULL);
@@ -30,15 +42,16 @@ int main(int argc, char **argv) {
         fprintf(stderr, "World size must be greater than 1 for %s\n", argv[0]);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
-    int number;
+
     if (world_rank == 0) {
-        // If we are rank 0, set the number to -1 and send it to process 1
-        number = -1;
-        printf("Process 0 sent number %d\n", number);
-        MPI_Send(&number, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+        pong_main();
     } else if (world_rank == 1) {
-        MPI_Recv(&number, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("Process 1 received number %d from process 0\n", number);
+        ping_main();
+    } else {
+        fprintf(stderr, "Proces has rank > 1 => more than 2 processes. Terminating without doing anything.\n");
+        return 1;
     }
+
     MPI_Finalize();
+    return 0;
 }
