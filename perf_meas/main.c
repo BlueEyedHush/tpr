@@ -38,15 +38,15 @@ void register_datatypes() {
 }
 
 void pong_main() {
-    fprintf(stderr, "Entered pong_main, waiting for data to arrive\n");
+    fprintf(stderr, "[PONG] Entered pong_main, waiting for data to arrive\n");
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
-        fprintf(stderr, "Waiting for comm session %d", i);
+        fprintf(stderr, "[PONG] Waiting for comm session %d", i);
         MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PING_RANK, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        fprintf(stderr, "Received data in comm session %d", i);
+        fprintf(stderr, "[PONG] Received data in comm session %d", i);
         MPI_Send(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PING_RANK, MPI_ANY_TAG, MPI_COMM_WORLD);
-        fprintf(stderr, "Sent back data in comm session %d", i);
+        fprintf(stderr, "[PONG] Sent back data in comm session %d", i);
     }
-    fprintf(stderr, "All expected message successfully received and sent back. Terminating.\n");
+    fprintf(stderr, "[PONG] All expected message successfully received and sent back. Terminating.\n");
 }
 
 void ping_main() {
