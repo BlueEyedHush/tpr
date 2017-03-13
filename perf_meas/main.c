@@ -6,6 +6,7 @@ typedef unsigned char byte;
 
 #define PONG_RANK 0
 #define PING_RANK 1
+#define TAG 0
 
 #define MSGS_TOTAL_SIZE 100000000 // number of bytes transfered
 #define MSG_CONF(SIZE) {SIZE, 100000000/SIZE} // total size always 10^8
@@ -40,11 +41,11 @@ void register_datatypes() {
 void pong_main() {
     fprintf(stderr, "[PONG] Entered pong_main, waiting for data to arrive\n");
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
-        fprintf(stderr, "[PONG] Waiting for comm session %d", i);
-        MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PING_RANK, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        fprintf(stderr, "[PONG] Received data in comm session %d", i);
-        MPI_Send(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PING_RANK, MPI_ANY_TAG, MPI_COMM_WORLD);
-        fprintf(stderr, "[PONG] Sent back data in comm session %d", i);
+        fprintf(stderr, "[PONG] Waiting for comm session %d\n", i);
+        MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PING_RANK, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        fprintf(stderr, "[PONG] Received data in comm session %d\n", i);
+        MPI_Send(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PING_RANK, TAG, MPI_COMM_WORLD);
+        fprintf(stderr, "[PONG] Sent back data in comm session %d\n", i);
     }
     fprintf(stderr, "[PONG] All expected message successfully received and sent back. Terminating.\n");
 }
@@ -52,11 +53,11 @@ void pong_main() {
 void ping_main() {
     fprintf(stderr, "[PING] Entered pong_main, waiting for data to arrive\n");
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
-        fprintf(stderr, "[PING] Sending data in comm session %d", i);
-        MPI_Send(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, MPI_ANY_TAG, MPI_COMM_WORLD);
-        fprintf(stderr, "[PING] Data in session %d successfully sent. Waiting for them to come back.", i);
-        MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        fprintf(stderr, "[PING] Received data from PONG process in session %d", i);
+        fprintf(stderr, "[PING] Sending data in comm session %d\n", i);
+        MPI_Send(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, TAG, MPI_COMM_WORLD);
+        fprintf(stderr, "[PING] Data in session %d successfully sent. Waiting for them to come back.\n", i);
+        MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        fprintf(stderr, "[PING] Received data from PONG process in session %d\n", i);
     }
     fprintf(stderr, "[PING] All expected message successfully sent. All responses received. Terminating.\n");
 }
