@@ -8,8 +8,8 @@ typedef unsigned char byte;
 #define PING_RANK 1
 #define TAG 0
 
-#define MSGS_TOTAL_SIZE 100000000 // number of bytes transfered
-#define MSG_CONF(SIZE) {SIZE, 100000000/SIZE} // total size always 10^8
+#define MSGS_TOTAL_SIZE 134217728 // number of bytes transfered
+#define MSG_CONF(SIZE) {SIZE, 134217728/SIZE} // total size always 2^27
 #define NUM_MSG_CONFS 12
 #define MSG_SIZE_ID 0
 #define MSG_COUNT_ID 1
@@ -70,7 +70,7 @@ void ping_main() {
 void report_times() {
     printf("*** RUN TIMES ***\n");
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
-        printf("%8d: %f\n", i, runtimes[i]);
+        printf("%8d: %.20f\n", i, runtimes[i]);
     }
 }
 
