@@ -30,6 +30,8 @@ byte buffer[MSGS_TOTAL_SIZE] = {0}; // one is reserved to store id into msg_conf
 
 MPI_Datatype datatypes[NUM_MSG_CONFS] = {0};
 
+double runtimes[NUM_MSG_CONFS] = {0.0};
+
 void register_datatypes() {
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
         int size = msg_confs[i][MSG_SIZE_ID];
@@ -54,12 +56,22 @@ void ping_main() {
     fprintf(stderr, "[PING] Entered pong_main, waiting for data to arrive\n");
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
         fprintf(stderr, "[PING] Sending data in comm session %d\n", i);
+        double start = MPI_Wtime();
         MPI_Send(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, TAG, MPI_COMM_WORLD);
         fprintf(stderr, "[PING] Data in session %d successfully sent. Waiting for them to come back.\n", i);
         MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        double end = MPI_Wtime();
         fprintf(stderr, "[PING] Received data from PONG process in session %d\n", i);
+        runtimes[i] = end - start;
     }
     fprintf(stderr, "[PING] All expected message successfully sent. All responses received. Terminating.\n");
+}
+
+void report_times() {
+    printf("*** RUN TIMES ***\n");
+    for(int i = 0; i < NUM_MSG_CONFS; i++) {
+        printf("%8d: %f\n", i, runtimes[i]);
+    }
 }
 
 int main(int argc, char **argv) {
@@ -81,6 +93,7 @@ int main(int argc, char **argv) {
         pong_main();
     } else if (world_rank == PING_RANK) {
         ping_main();
+        report_times();
     } else {
         fprintf(stderr, "Proces has rank > 1 => more than 2 processes. Terminating without doing anything.\n");
         return 1;
