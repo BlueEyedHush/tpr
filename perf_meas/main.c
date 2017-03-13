@@ -62,7 +62,7 @@ void ping_main() {
         MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         double end = MPI_Wtime();
         fprintf(stderr, "[PING] Received data from PONG process in session %d\n", i);
-        runtimes[i] = end - start;
+        runtimes[i] = (end - start)/2;
     }
     fprintf(stderr, "[PING] All expected message successfully sent. All responses received. Terminating.\n");
 }
