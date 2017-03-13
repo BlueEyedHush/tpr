@@ -4,10 +4,14 @@
 
 typedef unsigned char byte;
 
-#define MSGS_TOTAL_SIZE 100000001 // number of bytes transfered
-#define MSGS_SIZE 100000000 // number of bytes of meaningful data
+#define PONG_RANK 0
+#define PING_RANK 1
+
+#define MSGS_TOTAL_SIZE 100000000 // number of bytes transfered
 #define MSG_CONF(SIZE) {SIZE, 100000000/SIZE} // total size always 10^8
 #define NUM_MSG_CONFS 12
+#define MSG_SIZE_ID 0
+#define MSG_COUNT_ID 1
 const int msg_confs[][2] = {MSG_CONF(1),
                             MSG_CONF(4),
                             MSG_CONF(16),
@@ -27,16 +31,22 @@ MPI_Datatype datatypes[NUM_MSG_CONFS] = {0};
 
 void register_datatypes() {
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
-        int size = msg_confs[i][0];
+        int size = msg_confs[i][MSG_SIZE_ID];
         MPI_Type_contiguous(size, MPI_BYTE, &datatypes[i]);
         MPI_Type_commit(&datatypes[i]);
     }
 }
 
 void pong_main() {
-    int number = -1;
-    printf("Process 0 sent number %d\n", number);
-    MPI_Send(&number, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+    fprintf(stderr, "Entered pong_main, waiting for data to arrive\n");
+    for(int i = 0; i < NUM_MSG_CONFS; i++) {
+        fprintf(stderr, "Waiting for comm session %d", i);
+        MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PING_RANK, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        fprintf(stderr, "Received data in comm session %d", i);
+        MPI_Send(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PING_RANK, MPI_ANY_TAG, MPI_COMM_WORLD);
+        fprintf(stderr, "Sent back data in comm session %d", i);
+    }
+    fprintf(stderr, "All expected message successfully received and sent back. Terminating.\n");
 }
 
 void ping_main() {
@@ -60,9 +70,9 @@ int main(int argc, char **argv) {
 
     register_datatypes();
 
-    if (world_rank == 0) {
+    if (world_rank == PONG_RANK) {
         pong_main();
-    } else if (world_rank == 1) {
+    } else if (world_rank == PING_RANK) {
         ping_main();
     } else {
         fprintf(stderr, "Proces has rank > 1 => more than 2 processes. Terminating without doing anything.\n");
