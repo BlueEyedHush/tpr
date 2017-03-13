@@ -50,9 +50,15 @@ void pong_main() {
 }
 
 void ping_main() {
-    int number = 0;
-    MPI_Recv(&number, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    printf("Process 1 received number %d from process 0\n", number);
+    fprintf(stderr, "[PING] Entered pong_main, waiting for data to arrive\n");
+    for(int i = 0; i < NUM_MSG_CONFS; i++) {
+        fprintf(stderr, "[PING] Sending data in comm session %d", i);
+        MPI_Send(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, MPI_ANY_TAG, MPI_COMM_WORLD);
+        fprintf(stderr, "[PING] Data in session %d successfully sent. Waiting for them to come back.", i);
+        MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        fprintf(stderr, "[PING] Received data from PONG process in session %d", i);
+    }
+    fprintf(stderr, "[PING] All expected message successfully sent. All responses received. Terminating.\n");
 }
 
 int main(int argc, char **argv) {
