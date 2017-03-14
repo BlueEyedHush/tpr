@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
 
-mpiexec -np 2 out/perfm_sync
-mpiexec -np 2 out/perfm_buff
+DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+mpiexec -np 2 "$DIR"/out/perfm_sync
+mpiexec -np 2 "$DIR"/out/perfm_buff
