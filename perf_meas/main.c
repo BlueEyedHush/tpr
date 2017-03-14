@@ -34,7 +34,6 @@ double runtimes[NUM_MSG_CONFS] = {0.0};
 
 // BUFFERED macro is defined by compiler if we are benchmarking buffered sends
 // otherwise, synchronous version is used
-#define BUFFERED 1
 #ifdef BUFFERED
     #define SEND_FUNC MPI_Bsend
 #else
