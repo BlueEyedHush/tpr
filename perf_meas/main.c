@@ -80,7 +80,7 @@ void ping_main() {
 void report_times() {
     printf("*** RUN TIMES ***\n");
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
-        printf("%8d: %.20f\n", i, runtimes[i]);
+        printf("  %.20f\n", runtimes[i]);
     }
 }
 
