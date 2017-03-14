@@ -40,6 +40,8 @@ double runtimes[NUM_MSG_CONFS] = {0.0};
     #define SEND_FUNC MPI_Ssend
 #endif
 
+// for latency calculations, LATENCY macro is defined
+
 byte send_buff[MSGS_TOTAL_SIZE*NUM_MSG_CONFS] = {0};
 
 void register_datatypes() {
@@ -52,7 +54,11 @@ void register_datatypes() {
 
 void pong_main() {
     fprintf(stderr, "[PONG] Entered pong_main, waiting for data to arrive\n");
+#ifndef LATENCY
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
+#else
+    int i = 0; {  // use smallest datatype for latency calculations
+#endif
         fprintf(stderr, "[PONG] Waiting for comm session %d\n", i);
         MPI_Recv(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PING_RANK, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         fprintf(stderr, "[PONG] Received data in comm session %d\n", i);
@@ -64,7 +70,11 @@ void pong_main() {
 
 void ping_main() {
     fprintf(stderr, "[PING] Entered pong_main, waiting for data to arrive\n");
+#ifndef LATENCY
     for(int i = 0; i < NUM_MSG_CONFS; i++) {
+#else
+    int i = 0; {  // use smallest datatype for latency calculations
+#endif
         fprintf(stderr, "[PING] Sending data in comm session %d\n", i);
         double start = MPI_Wtime();
         SEND_FUNC(buffer, msg_confs[i][MSG_COUNT_ID], datatypes[i], PONG_RANK, TAG, MPI_COMM_WORLD);
@@ -89,6 +99,10 @@ void print_bench_mode() {
     printf("Runnign in buffered mode\n");
 #else
     printf("Runnign in synchronous mode\n");
+#endif
+
+#ifdef LATENCY
+    printf("Latency calculation\n");
 #endif
 }
 
