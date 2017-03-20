@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -75,21 +76,23 @@ int main(int argc, char** argv) {
 
 	// Print the random numbers on each process
 	printf("Local sum for process %d - %f\n", world_rank, local_sum);
-
 	float global_sum;
-	reduce(&local_sum, &global_sum, 0, MPI_COMM_WORLD);
-
-	/*MPI_Reduce(&local_sum, &global_sum, 1, MPI_FLOAT, MPI_SUM, 0,
-	MPI_COMM_WORLD);*/
-
-	// Print the result
-	if (world_rank == 0) {
-		printf("TOTAL sum = %f\n", global_sum);
-	}
 
 	// Clean up
 	free(rand_nums);
 
+	double time_start = MPI_Wtime();
+	for (int i = 0; i < 5; i++) {
+	#ifdef CUSTOM
+		reduce(&local_sum, &global_sum, 0, MPI_COMM_WORLD);
+	#else
+		MPI_Reduce(&local_sum, &global_sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+	#endif
+	}
 	MPI_Barrier(MPI_COMM_WORLD);
+	double time_end = MPI_Wtime();
+
+	printf("Reduce time: %.20fs\n", (time_end - time_start) / 10);
+
 	MPI_Finalize();
 }
