@@ -32,12 +32,23 @@ int main(int argc, char** argv) {
         // we are the broadcaster and we are sending
         srand(time(NULL));
         int data = rand();
-        broadcast(world_size, world_rank, &data);
+        double start = MPI_Wtime();
+        for(int i = 0; i < 10; i++) {
+        #ifdef CUSTOM
+            broadcast(world_size, world_rank, &data);
+        #else
+            MPI_Bcast(&data, 1, MPI_INT, world_rank, MPI_COMM_WORLD);
+        #endif
+        }
+        double end = MPI_Wtime();
+        printf("Broadcast took: %.20fs\n", (end-start)/10);
     } else if (world_rank > 0) {
         // wait for broadcast to arrive
         int buffer = 0;
-        MPI_Recv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("Process %d received number %d\n", world_rank, buffer);
+        for(int i = 0; i < 10; i++) {
+            MPI_Recv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            printf("Process %d received number %d\n", world_rank, buffer);
+        }
     }
     MPI_Finalize();
 }
