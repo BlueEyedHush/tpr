@@ -31,7 +31,10 @@ else
     exit 1
 fi
 
-CMD="mpiexec $PROC_OPTS $VCLUSTER_OPTS ${OUT_DIR}exec $ARGS"
+shift
+shift
+
+CMD="mpiexec $PROC_OPTS $VCLUSTER_OPTS ${OUT_DIR}exec $ARGS $@"
 echo "$CMD"
 
 $CMD

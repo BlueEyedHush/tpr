@@ -31,7 +31,11 @@ mkdir -p "$RES_DIR"
 
 RES_FILE="$RES_DIR"/res
 
+shift
+shift
+shift
+
 for i in `seq 1 $ITERS`; do
     echo -e "\nNew run\n" >> "$RES_FILE"
-    "$DIR"/run.sh "$PROJ" "$ENV" | tee -a "$RES_FILE"
+    "$DIR"/run.sh "$PROJ" "$ENV" $@ | tee -a "$RES_FILE"
 done

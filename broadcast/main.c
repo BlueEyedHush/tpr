@@ -6,6 +6,8 @@
 #define RECEIVERS_NUM 4
 #define TAG 0
 
+short use_custom_impl = 0;
+
 void broadcast(const int world_size, const int world_rank, const int *data) {
     fprintf(stderr, "BROADCASTING %d\n", *data);
     for(int i = 0; i < world_size; i++) {
@@ -15,7 +17,28 @@ void broadcast(const int world_size, const int world_rank, const int *data) {
     }
 }
 
+void print_usage() {
+    fprintf(stderr, "Usage: executable <c|b> (c - custom, i - built-in)\n");
+}
+
 int main(int argc, char** argv) {
+    if(argc < 2) {
+        print_usage();
+        return 1;
+    } else {
+        switch(argv[1][0]) {
+            case 'c':
+                use_custom_impl = 1;
+                break;
+            case 'b':
+                use_custom_impl = 0;
+                break;
+            default:
+                print_usage();
+                return 1;
+        }
+    }
+
     MPI_Init(NULL, NULL);
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -34,11 +57,11 @@ int main(int argc, char** argv) {
         int data = rand();
         double start = MPI_Wtime();
         for(int i = 0; i < 10; i++) {
-        #ifdef CUSTOM
-            broadcast(world_size, world_rank, &data);
-        #else
-            MPI_Bcast(&data, 1, MPI_INT, world_rank, MPI_COMM_WORLD);
-        #endif
+            if(use_custom_impl != 0) {
+                broadcast(world_size, world_rank, &data);
+            } else {
+                MPI_Bcast(&data, 1, MPI_INT, world_rank, MPI_COMM_WORLD);
+            }
         }
         double end = MPI_Wtime();
         printf("Broadcast took: %.20fs\n", (end-start)/10);
