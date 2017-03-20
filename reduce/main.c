@@ -52,12 +52,8 @@ void reduce(const float *sendbuf, float *recvbuf, /*int count,*/ int root, MPI_C
 }
 
 int main(int argc, char** argv) {
-	if (argc != 2) {
-		fprintf(stderr, "Usage: avg num_elements_per_proc\n");
-		exit(1);
-	}
 
-	int num_elements_per_proc = atoi(argv[1]);
+	int num_elements_per_proc = 2;
 	MPI_Init(NULL, NULL);
 
 	int world_rank;
@@ -81,6 +77,7 @@ int main(int argc, char** argv) {
 	// Clean up
 	free(rand_nums);
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	double time_start = MPI_Wtime();
 	for (int i = 0; i < 5; i++) {
 	#ifdef CUSTOM
