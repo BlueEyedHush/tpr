@@ -22,10 +22,10 @@ else
 fi
 
 if [ "$PROJ" == "reduce" ]; then
-    PROC_OPTS="-np 4"
+    PROC_OPTS="-n 4"
     ARGS="" # HERE GO ADDITIONAL ARGUMENTS FOR REDUCE!
 elif [ "$PROJ" == "broadcast" ]; then
-    PROC_OPTS="-np 5"
+    PROC_OPTS="-n 5"
 else
     echo "Project must be one of reduce|broadcast"
     exit 1
