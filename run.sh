@@ -34,7 +34,7 @@ fi
 shift
 shift
 
-CMD="mpiexec $PROC_OPTS $VCLUSTER_OPTS ${OUT_DIR}exec $ARGS $@"
+CMD="mpiexec $VCLUSTER_OPTS $PROC_OPTS ${OUT_DIR}exec $ARGS $@"
 # echo "$CMD"
 
 $CMD
