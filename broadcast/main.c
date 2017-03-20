@@ -9,7 +9,7 @@
 short use_custom_impl = 0;
 short iterations = 10;
 
-void broadcast(const int world_size, const int world_rank, const int *data) {
+void broadcast(const int world_size, const int world_rank, int *data) {
     fprintf(stderr, "BROADCASTING %d\n", *data);
     for(int i = 0; i < world_size; i++) {
         if(i != world_rank) {
