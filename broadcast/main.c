@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
             }
         }
         double end = MPI_Wtime();
-        fprintf(stderr, "Broadcast took: %.20fs\n", (end-start)/(2*iterations)); // dividing by 2 because we cound RTT
+        printf("%.20f\n", (end-start)/(2*iterations)); // dividing by 2 because we cound RTT
     } else if (world_rank > 0) {
         // wait for broadcast to arrive
         int buffer = 0;

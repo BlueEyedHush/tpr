@@ -35,7 +35,7 @@ shift
 shift
 shift
 
+echo -e "\nNew run\n" >> "$RES_FILE"
 for i in `seq 1 $ITERS`; do
-    echo -e "\nNew run\n" >> "$RES_FILE"
     "$DIR"/run.sh "$PROJ" "$ENV" $@ | tee -a "$RES_FILE"
 done
