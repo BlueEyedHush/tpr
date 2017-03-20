@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
             case 'c':
                 use_custom_impl = 1;
                 break;
-            case 'b':
+            case 'i':
                 use_custom_impl = 0;
                 break;
             default:
@@ -77,7 +77,11 @@ int main(int argc, char** argv) {
         // wait for broadcast to arrive
         int buffer = 0;
         for(int i = 0; i < 10; i++) {
-            MPI_Recv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            if(use_custom_impl != 0) {
+                MPI_Recv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            } else {
+                MPI_Bcast(&buffer, 1, MPI_INT, world_rank, MPI_COMM_WORLD);
+            }
             fprintf(stderr, "Process %d received number %d\n", world_rank, buffer);
             buffer = world_rank;
             MPI_Send(&buffer, 1, MPI_INT, 0, TAG, MPI_COMM_WORLD);
