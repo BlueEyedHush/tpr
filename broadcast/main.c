@@ -7,6 +7,7 @@
 #define TAG 0
 
 short use_custom_impl = 0;
+short iterations = 10;
 
 void broadcast(const int world_size, const int world_rank, const int *data) {
     fprintf(stderr, "BROADCASTING %d\n", *data);
@@ -56,21 +57,31 @@ int main(int argc, char** argv) {
         srand(time(NULL));
         int data = rand();
         double start = MPI_Wtime();
-        for(int i = 0; i < 10; i++) {
+        for(int i = 0; i < iterations; i++) {
+            fprintf(stderr, "Sending out the broadcast\n");
             if(use_custom_impl != 0) {
                 broadcast(world_size, world_rank, &data);
             } else {
                 MPI_Bcast(&data, 1, MPI_INT, world_rank, MPI_COMM_WORLD);
             }
+            fprintf(stderr, "Waiting for responses\n");
+            for(int i = 0; i < world_size-1; i++) {
+                int buffer;
+                MPI_Recv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                fprintf(stderr, "Hearing back from %d\n", buffer);
+            }
         }
         double end = MPI_Wtime();
-        printf("Broadcast took: %.20fs\n", (end-start)/10);
+        fprintf(stderr, "Broadcast took: %.20fs\n", (end-start)/(2*iterations)); // dividing by 2 because we cound RTT
     } else if (world_rank > 0) {
         // wait for broadcast to arrive
         int buffer = 0;
         for(int i = 0; i < 10; i++) {
             MPI_Recv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            printf("Process %d received number %d\n", world_rank, buffer);
+            fprintf(stderr, "Process %d received number %d\n", world_rank, buffer);
+            buffer = world_rank;
+            MPI_Send(&buffer, 1, MPI_INT, 0, TAG, MPI_COMM_WORLD);
+            fprintf(stderr, "Process %d is sending back\n", world_rank);
         }
     }
     MPI_Finalize();
