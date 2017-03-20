@@ -19,7 +19,7 @@ void broadcast(const int world_size, const int world_rank, int *data) {
 }
 
 void print_usage() {
-    fprintf(stderr, "Usage: executable <c|b> (c - custom, i - built-in)\n");
+    fprintf(stderr, "Usage: executable <c|i> (c - custom, i - built-in)\n");
 }
 
 int main(int argc, char** argv) {
