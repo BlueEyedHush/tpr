@@ -42,13 +42,13 @@ void reduce_worker(int world_rank, int world_size) {
 			// wait for data required for computation
             fprintf(stderr, "Process %d waiting for data, stride %d\n", world_rank, stride_size);
 			float partial = 0.0f;
-			MPI_Recv(&partial, 1, MPI_FLOAT, 0, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&partial, 1, MPI_FLOAT, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			// combine partial with result we currently have
 			computation_result += partial;
 		}
 		// we no longer need to compute - now we have to send it
 		// works also for last processor -> it'll have world_rank 1, which is not < than 1 - final stride size
-        int dest = world_rank - stride_size;
+        int dest = world_rank == 1 ? 0 : world_rank - stride_size;
         fprintf(stderr, "Process %d ended with stride %d, sending data to %d\n", world_rank, stride_size, dest);
 		MPI_Send(&computation_result, 1, MPI_FLOAT, dest, TAG, MPI_COMM_WORLD);
 	}

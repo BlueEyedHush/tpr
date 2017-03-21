@@ -22,7 +22,7 @@ else
 fi
 
 if [ "$PROJ" == "reduce" ]; then
-    PROC_OPTS="-n 5"
+    PROC_OPTS="-n 17"
     ARGS="" # HERE GO ADDITIONAL ARGUMENTS FOR REDUCE!
 elif [ "$PROJ" == "broadcast" ]; then
     PROC_OPTS="-n 5"
