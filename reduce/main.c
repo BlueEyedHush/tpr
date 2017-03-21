@@ -75,17 +75,19 @@ int main(int argc, char** argv) {
         for (int i = 0; i < n; i++) {
             local_sum += rand_nums[i];
         }
-        fprintf(stderr, "Local sum: %.20fs\n", local_sum);
+        //fprintf(stderr, "Local sum: %.20fs\n", local_sum);
 
         double time_start = MPI_Wtime();
         for (int i = 0; i < ITERS; i++) {
             float result = reduce_master(rand_nums, world_size);
-            fprintf(stderr, "TOTAL sum = %f\n", result);
+           // fprintf(stderr, "TOTAL sum = %f\n", result);
         }
         double time_end = MPI_Wtime();
 
         // Print the result
-        printf("%.20f\n", (time_end - time_start) / 10);
+		if(world_rank == 0){
+			printf("%.20f\n", (time_end - time_start) / world_size -1);
+		}
 
         // Clean up
         free(rand_nums);
