@@ -129,11 +129,11 @@ int main(int argc, char** argv) {
 		}
 		float global_sum;
 
-		double time_start = MPI_Wtime();
+		time_start = MPI_Wtime();
 		for (int i = 0; i < ITERS; i++) {
 			MPI_Reduce(&local_sum, &global_sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 		}
-		double time_end = MPI_Wtime();
+		time_end = MPI_Wtime();
 
 		// Clean up
 		free(rand_nums);
