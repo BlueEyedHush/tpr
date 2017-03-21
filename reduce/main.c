@@ -51,7 +51,28 @@ void reduce(const float *sendbuf, float *recvbuf, /*int count,*/ int root, MPI_C
 	}
 }
 
+void print_usage() {
+	fprintf(stderr, "Usage: executable <c|i> (c - custom, i - built-in)\n");
+}
+
 int main(int argc, char** argv) {
+	if (argc < 2) {
+		print_usage();
+		return 1;
+	}
+	else {
+		switch (argv[1][0]) {
+		case 'c':
+			use_custom_impl = 1;
+			break;
+		case 'i':
+			use_custom_impl = 0;
+			break;
+		default:
+			print_usage();
+			return 1;
+		}
+	}
 
 	int num_elements_per_proc = 2;
 	MPI_Init(NULL, NULL);
@@ -80,12 +101,14 @@ int main(int argc, char** argv) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	double time_start = MPI_Wtime();
 	for (int i = 0; i < 5; i++) {
-	#ifdef CUSTOM
-		reduce(&local_sum, &global_sum, 0, MPI_COMM_WORLD);
-	#else
-		MPI_Reduce(&local_sum, &global_sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
-	#endif
+		if (use_custom_impl != 0) {
+			reduce(&local_sum, &global_sum, 0, MPI_COMM_WORLD);
+		}
+		else {
+			MPI_Reduce(&local_sum, &global_sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+		}
 	}
+	
 	MPI_Barrier(MPI_COMM_WORLD);
 	double time_end = MPI_Wtime();
 
