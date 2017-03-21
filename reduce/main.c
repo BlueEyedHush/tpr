@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 	}
 
 	// Print the random numbers on each process
-	printf("Local sum for process %d - %f\n", world_rank, local_sum);
+	//printf("Local sum for process %d - %f\n", world_rank, local_sum);
 	float global_sum;
 
 	// Clean up
@@ -89,7 +89,9 @@ int main(int argc, char** argv) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	double time_end = MPI_Wtime();
 
-	printf("Reduce time: %.20fs\n", (time_end - time_start) / 10);
+	if (world_rank == 0) {
+		printf("Reduce time: %.20fs\n", (time_end - time_start) / 10);
+	}
 
 	MPI_Finalize();
 }
