@@ -5,6 +5,9 @@
 #include <assert.h>
 #include <time.h>
 
+#define ITERS 1
+#define TAG 0
+
 // Creates an array of random numbers. Each number has a value from 0 - 1
 float *create_rand_nums(int num_elements) {
 	float *rand_nums = (float *)malloc(sizeof(float) * num_elements);
@@ -15,148 +18,80 @@ float *create_rand_nums(int num_elements) {
 	return rand_nums;
 }
 
-void reduce_priv(const float *sendbuf, float *recvbuf, int root, MPI_Comm comm, int world_size) {
-	int count = 1;
-	int tag = 0;
-	int world_rank;
-	MPI_Comm_rank(comm, &world_rank);
-
-	if (world_size == 2) {
-		if (world_rank != root) {
-			MPI_Send(&sendbuf, count, MPI_FLOAT, root, tag, comm);
-		}
-		if (world_rank == root) {
-			float global_sum;
-			int i = 0;
-			global_sum = *sendbuf;
-			while (i != 1) {
-				int flag = 0;
-				MPI_Iprobe(MPI_ANY_SOURCE, tag, comm, &flag, MPI_STATUS_IGNORE);
-				if (flag) {
-					float sum = 0;
-					MPI_Recv(&sum, count, MPI_FLOAT, MPI_ANY_SOURCE, tag,
-						comm, MPI_STATUS_IGNORE);
-					global_sum += sum;
-					i++;
-				}
-			}
-			*recvbuf = global_sum;
-		}
+float reduce_master(float nums[], int world_size) {
+ 	// start computation
+	for(int i = 1; i < world_size; i++) {
+		MPI_Send(&nums[i-1], 1, MPI_FLOAT, i, TAG, MPI_COMM_WORLD);
 	}
-	else {
-		if (world_rank >= world_size / 2) {
-			int receiver = world_rank - world_size / 2;
-			MPI_Send(sendbuf, count, MPI_FLOAT, receiver, tag, comm);
-		}
 
-		if (world_rank < world_size / 2) {
-			float global_sum;
-			int i = 0;
-			global_sum = *sendbuf;
-			while (i != 1) {
-				int flag = 0;
-				MPI_Iprobe(MPI_ANY_SOURCE, tag, comm, &flag, MPI_STATUS_IGNORE);
-				if (flag) {
-					float sum = 0;
-					MPI_Recv(&sum, count, MPI_FLOAT, MPI_ANY_SOURCE, tag,
-						comm, MPI_STATUS_IGNORE);
-					global_sum += sum;
-					i++;
-				}
-			}
-			reduce_priv(&global_sum, recvbuf, root, world_rank, world_size / 2);
-		}
-	}
+	// wait for the result to be returned
+	float final_result = 0.0f;
+	MPI_Recv(&final_result, 1, MPI_FLOAT, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	return final_result;
 }
 
-
-//for now count MUST == 1
-void reduce(const float *sendbuf, float *recvbuf, /*int count,*/ int root, MPI_Comm comm) {
-	int count = 1;
-	int tag = 0;
-	int world_rank;
-	MPI_Comm_rank(comm, &world_rank);
-
-	int world_size;
-	MPI_Comm_size(comm, &world_size);
-
-	if (world_size % 2 == 0) {
-		printf("test");
-		reduce_priv(sendbuf, recvbuf, root, world_rank, world_size);
-	}
-	else {
-		/*Sending result to root*/
-		if (world_rank != root) {
-
-			MPI_Send(sendbuf, count, MPI_FLOAT, root, tag, comm);
+void reduce_worker(int world_rank, int world_size) {
+	// assuming world_size 2^N+1, for N >= 1
+	if(world_size < 3) {
+		fprintf(stderr, "World size must be 2^N+1 for N >= 1, but is %d", world_size);
+	} else {
+		// initial value for reduce - 0
+		float computation_result = 0.0f;
+		int stride_size = world_size-1;
+		for(; world_rank < stride_size + 1; stride_size/=2) {
+			// wait for data required for computation
+            fprintf(stderr, "Process %d waiting for data, stride %d\n", world_rank, stride_size);
+			float partial = 0.0f;
+			MPI_Recv(&partial, 1, MPI_FLOAT, 0, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			// combine partial with result we currently have
+			computation_result += partial;
 		}
-
-		// Reduce all of the local sums into the global sum
-		if (world_rank == root) {
-			float global_sum;
-			int i = 0;
-			global_sum = *sendbuf;
-			while (i < world_size - 1) {
-				int flag = 0;
-				MPI_Iprobe(MPI_ANY_SOURCE, tag, comm, &flag, MPI_STATUS_IGNORE);
-				if (flag) {
-					float sum = 0;
-					MPI_Recv(&sum, count, MPI_FLOAT, MPI_ANY_SOURCE, tag,
-						comm, MPI_STATUS_IGNORE);
-					global_sum += sum;
-					i++;
-				}
-			}
-			*recvbuf = global_sum;
-		}
+		// we no longer need to compute - now we have to send it
+		// works also for last processor -> it'll have world_rank 1, which is not < than 1 - final stride size
+        int dest = world_rank - stride_size;
+        fprintf(stderr, "Process %d ended with stride %d, sending data to %d\n", world_rank, stride_size, dest);
+		MPI_Send(&computation_result, 1, MPI_FLOAT, dest, TAG, MPI_COMM_WORLD);
 	}
 }
 
 int main(int argc, char** argv) {
 
-	int num_elements_per_proc = 2;
 	MPI_Init(NULL, NULL);
 
 	int world_rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-	// Create a random array of elements on all processes.
-	srand(time(NULL)*world_rank);   // Seed the random number generator to get different results each time for each processor
-	float *rand_nums = NULL;
-	rand_nums = create_rand_nums(num_elements_per_proc);
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-	// Sum the numbers locally
-	float local_sum = 0;
-	for (int i = 0; i < num_elements_per_proc; i++) {
-		local_sum += rand_nums[i];
-	}
+    if (world_rank == 0) {
+        // Create a random array of elements on all processes.
+        srand(time(NULL)*world_rank);   // Seed the random number generator to get different results each time for each processor
+        int n = world_size - 1;
+        float *rand_nums = create_rand_nums(n);
 
-	// Print the random numbers on each process
-	printf("Local sum for process %d - %f\n", world_rank, local_sum);
-	float global_sum;
+        // Sum the numbers locally
+        float local_sum = 0;
+        for (int i = 0; i < n; i++) {
+            local_sum += rand_nums[i];
+        }
+        printf("Local sum: %.20fs\n", local_sum);
 
-	// Clean up
-	free(rand_nums);
+        double time_start = MPI_Wtime();
+        for (int i = 0; i < ITERS; i++) {
+            float result = reduce_master(rand_nums, world_size);
+            printf("TOTAL sum = %f\n", result);
+        }
+        double time_end = MPI_Wtime();
 
-	MPI_Barrier(MPI_COMM_WORLD);
-	double time_start = MPI_Wtime();
-	for (int i = 0; i < 5; i++) {
-		//#ifdef CUSTOM
-		reduce(&local_sum, &global_sum, 0, MPI_COMM_WORLD);
-		//#else
-		//MPI_Reduce(&local_sum, &global_sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
-		//#endif
-	}
-	MPI_Barrier(MPI_COMM_WORLD);
-	double time_end = MPI_Wtime();
+        // Print the result
+        printf("Reduce time: %.20fs\n", (time_end - time_start) / 10);
 
-	// Print the result
-	if (world_rank == 0) {
-		printf("TOTAL sum = %f\n", global_sum);
-	}
-
-
-	printf("Reduce time: %.20fs\n", (time_end - time_start) / 10);
+        // Clean up
+        free(rand_nums);
+    } else {
+        reduce_worker(world_rank, world_size);
+    }
 
 	MPI_Finalize();
 }
