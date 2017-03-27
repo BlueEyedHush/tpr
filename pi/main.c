@@ -1,3 +1,4 @@
+
 #include <mpi.h>
 #include <stdio.h>
 #include <assert.h>
@@ -18,7 +19,7 @@ void print_usage() {
 }
 
 int main(int argc, char** argv) {
-	long num_iter;
+	unsigned long num_iter;
 	if (argc < 2) {
 		print_usage();
 		return 1;
@@ -44,13 +45,16 @@ int main(int argc, char** argv) {
 
 	double time_start;
 	double time_end;
-	MPI_Barrier(MPI_COMM_WORLD);
-	time_start = MPI_Wtime();
 
-	long num_iter_per_processor = num_iter / world_size;
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (world_rank == 0) {
+		time_start = MPI_Wtime();
+	}
+
+	unsigned long num_iter_per_processor = num_iter / world_size;
 
 	double x, y;
-	int local_circle_count = 0; /* # of points in the 1st quadrant of unit circle */
+	long local_circle_count = 0; /* # of points in the 1st quadrant of unit circle */
 	double z;
 	double pi;
 	/* initialize random numbers */
@@ -62,16 +66,15 @@ int main(int argc, char** argv) {
 		z = x*x + y*y;
 		if (z <= 1) local_circle_count++;
 	}
-	int global_circle_count;
+	long global_circle_count;
 
 	MPI_Reduce(&local_circle_count, &global_circle_count, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-	time_end = MPI_Wtime();
-
 	if (world_rank == 0) {
+		time_end = MPI_Wtime();
 		pi = 4.0 *(double)global_circle_count / num_iter;
-		printf("# iter= %d , estimate of pi is %g \n", num_iter, pi);
-		printf("%.20f\n", time_end - time_start);
+		//# iter; time; pi
+		printf("%d;%.20f;%g\n", num_iter, time_end - time_start, pi);
 	}
 
 	// Finalize the MPI environment.
