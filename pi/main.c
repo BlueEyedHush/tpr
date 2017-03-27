@@ -13,7 +13,19 @@ float *create_rand_nums(int num_elements) {
 	return rand_nums;
 }
 
+void print_usage() {
+	fprintf(stderr, "Usage: executable [number of iterations]\n");
+}
+
 int main(int argc, char** argv) {
+	long num_iter;
+	if (argc < 2) {
+		print_usage();
+		return 1;
+	}
+	else {
+		num_iter = atoi(argv[1]);
+	}
 	// Initialize the MPI environment
 	MPI_Init(NULL, NULL);
 
@@ -35,7 +47,6 @@ int main(int argc, char** argv) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	time_start = MPI_Wtime();
 
-	long num_iter = 1000000;
 	long num_iter_per_processor = num_iter / world_size;
 
 	double x, y;
@@ -43,8 +54,8 @@ int main(int argc, char** argv) {
 	double z;
 	double pi;
 	/* initialize random numbers */
+	srand(world_rank);
 	for (long i = 0; i < num_iter_per_processor; i++) {
-		srand(time(NULL));
 		float *rand_nums = create_rand_nums(2);
 		x = rand_nums[0];
 		y = rand_nums[1];
