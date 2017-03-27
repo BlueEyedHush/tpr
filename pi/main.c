@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 		time_end = MPI_Wtime();
 		pi = 4.0 *(double)global_circle_count / num_iter;
 		//# iter; time; pi
-		printf("%d;%.20f;%g\n", num_iter, time_end - time_start, pi);
+		printf("%lu;%.20f;%g\n", num_iter, time_end - time_start, pi);
 	}
 
 	// Finalize the MPI environment.
