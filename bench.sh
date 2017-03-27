@@ -8,17 +8,10 @@ else
 fi
 
 if [ -z "$2" ]; then
-    echo "Need to specify environment local|vcluster as second argument"
+    echo "Need to number of iterations as second argument"
     exit 1
 else
-    ENV="$2"
-fi
-
-if [ -z "$3" ]; then
-    echo "Need to number of iterations as third argument"
-    exit 1
-else
-    ITERS="$3"
+    ITERS="$2"
 fi
 
 REL_DIR="$(dirname "${BASH_SOURCE[0]}")"
@@ -33,9 +26,8 @@ RES_FILE="$RES_DIR"/res
 
 shift
 shift
-shift
 
 echo -e "\nNew run\n" >> "$RES_FILE"
 for i in `seq 1 $ITERS`; do
-    "$DIR"/run.sh "$PROJ" "$ENV" $@ | tee -a "$RES_FILE"
+    "$DIR"/run.sh "$PROJ" $@ | tee -a "$RES_FILE"
 done
