@@ -21,20 +21,18 @@ else
     exit 1
 fi
 
-if [ "$PROJ" == "reduce" ]; then
-    PROC_OPTS="-n 5"
-    ARGS="" # HERE GO ADDITIONAL ARGUMENTS FOR REDUCE!
-elif [ "$PROJ" == "broadcast" ]; then
-    PROC_OPTS="-n 5"
-else
-    echo "Project must be one of reduce|broadcast"
+if [ -z "$3" ]; then
+    echo "Third argument must be number of processes"
     exit 1
+else
+    PROC_NUM="$3"
 fi
 
 shift
 shift
+shift
 
-CMD="mpiexec $VCLUSTER_OPTS $PROC_OPTS ${OUT_DIR}exec $ARGS $@"
+CMD="mpiexec $VCLUSTER_OPTS -n $PROC_NUM ${OUT_DIR}exec $ARGS $@"
 # echo "$CMD"
 
 $CMD
