@@ -12,6 +12,7 @@
 #define PRINT_ARRAY_CONTENTS 0
 #define MERGING_PARALLEL 0
 #define IN_OUT_SIZE_VALIDATION 0
+#define EXTENDED_REPORTING 1
 
 using namespace std;
 
@@ -180,8 +181,19 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; i < iterations; i++) {
 		const clock_t begin_time = clock();
 		bucket_sort(unsorted, array_size, bucket_count);
-		const clock_t end_time = clock();
-		printf("%.20f\n", (float(end_time - begin_time)) / CLOCKS_PER_SEC);
+		const float duration = (float(clock() - begin_time)) / CLOCKS_PER_SEC;
+
+		#if EXTENDED_REPORTING == 1
+			#if defined(_OPENMP)
+				int thread_num =  omp_get_thread_num();
+			#else
+				int thread_num = 0;
+			#endif
+
+			printf("%d, %d, %d, %.20f\n", array_size, bucket_count, thread_num, duration);
+		#else
+			printf("%.20f\n", duration);
+		#endif
 	}
 
 	#if PRINT_ARRAY_CONTENTS == 1
