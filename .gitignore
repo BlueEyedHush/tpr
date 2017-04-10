@@ -4,3 +4,6 @@ CMakeFiles/
 CMakeCache.txt
 out/
 results/
+openmp/main
+openmp/main_omp
+openmp/results.out

@@ -188,7 +188,6 @@ int main(int argc, char* argv[]) {
 		print_array(unsorted, array_size);
 	#endif
 
-	getchar();
 	return 0;
 }
 
