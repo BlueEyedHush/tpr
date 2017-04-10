@@ -140,8 +140,11 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 	const float duration = (float(clock() - begin_time)) / CLOCKS_PER_SEC;
 
 	for (int i = 0; i < bucketCount; i++) {
+		delete buckets[i];
 		omp_destroy_lock(&(locks[i]));
 	}
+	delete[] locks;
+	delete[] buckets;
 
 	#if IN_OUT_SIZE_VALIDATION == 1
 		if (insertedElements != dataN) {
@@ -229,6 +232,7 @@ int main(int argc, char* argv[]) {
 		print_array(unsorted, array_size);
 	#endif
 
+	delete[] unsorted;
 	return 0;
 }
 
