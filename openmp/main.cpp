@@ -221,7 +221,7 @@ int main(int argc, char* argv[]) {
 		const float duration = (float(clock() - begin_time)) / CLOCKS_PER_SEC;
 
 		#if EXTENDED_REPORTING == 1
-			printf("%d, %d, %d, %.20f\n", array_size, bucket_count, thread_num, duration);
+			printf("%d\t%d\t%d\t%.20f\n", array_size, bucket_count, thread_num, duration);
 		#else
 			printf("%.20f\n", duration);
 		#endif
