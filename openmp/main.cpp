@@ -40,13 +40,15 @@ static void print_array(int *data, int count) {
 	printf("]");
 }
 
-static void bucket_sort(int *data, int dataN, int bucketCount) {
+static float bucket_sort(int *data, int dataN, int bucketCount) {
 	#if SUM_VALIDATION == 1
 		long long sum_before_sorting = 0L;
 		for(int i = 0; i < dataN; i++) {
 			sum_before_sorting += data[i];
 		}
 	#endif
+
+	const clock_t begin_time = clock();
 
 	/* array of pointer to buckets */
 	vector<int> **buckets = new vector<int> *[bucketCount];
@@ -134,6 +136,8 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 		}
 	#endif
 
+	const float duration = (float(clock() - begin_time)) / CLOCKS_PER_SEC;
+
 	for (int i = 0; i < bucketCount; i++) {
 		omp_destroy_lock(&(locks[i]));
 	}
@@ -154,6 +158,8 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 			printf("[ERROR] sums before (%lld) and after (%lld) different !!!\n", sum_before_sorting, sum_after_sorting);
 		}
 	#endif
+
+	return duration;
 }
 
 
@@ -208,9 +214,7 @@ int main(int argc, char* argv[]) {
 
 	// timed iterations
 	for(int i = 0; i < iterations; i++) {
-		const clock_t begin_time = clock();
-		bucket_sort(unsorted, array_size, bucket_count);
-		const float duration = (float(clock() - begin_time)) / CLOCKS_PER_SEC;
+		const float duration = bucket_sort(unsorted, array_size, bucket_count);
 
 		#if EXTENDED_REPORTING == 1
 			printf("%d\t%d\t%d\t%.20f\n", array_size, bucket_count, thread_num, duration);
