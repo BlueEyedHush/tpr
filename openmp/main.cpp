@@ -88,6 +88,16 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 		#pragma omp critical
 		buckets[selectedBucket]->push_back(data[i]);
 	}
+	
+	/*
+	#pragma omp parallel for
+	for (int i = 0; i < dataN; i++) {
+		int selectedBucket = (data[i] * bucketCount) / maxValue;
+		omp_set_lock(&(locks[selectedBucket]));
+		buckets[selectedBucket]->push_back(data[i]);
+		omp_unset_lock(&(locks[selectedBucket]));
+	}
+	*/
 
 	#pragma omp parallel for
 	// Sort all buckets
