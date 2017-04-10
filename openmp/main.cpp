@@ -9,6 +9,7 @@
 #include <climits>
 
 #define PRINT_ARRAY_CONTENTS 0
+#define MERGING_PARALLEL 0
 
 using namespace std;
 
@@ -77,16 +78,38 @@ static void bucket_sort(int* data, int count) {
 	}
 
 	// Merges buckets to array
-	int insertedElements = 0;
-	for (int i = 0; i < bucketCount; i++)
-	{
-		// Copy all values from bucket to array
-		for (size_t j = 0; j < buckets[i]->size(); j++)
+    #if MERGING_PARALLEL == 1
+        #pragma omp parallel for
+        for (int i = 0; i < bucketCount; i++)
+        {
+            size_t currBucketSize = buckets[i]->size();
+            if(currBucketSize > 0) {
+                // calculate offset
+                int nextElementId = 0;
+                for(int j = 0; j < i; j++) {
+                    nextElementId += buckets[j]->size();
+                }
+
+                // Copy all values from bucket to array
+                for (size_t j = 0; j < currBucketSize; j++)
+                {
+                    data[nextElementId] = buckets[i]->at(j);
+                    nextElementId++;
+                }
+            }
+        }
+    #else
+		int insertedElements = 0;
+		for (int i = 0; i < bucketCount; i++)
 		{
-			data[insertedElements] = buckets[i]->at(j);
-			insertedElements++;
+			// Copy all values from bucket to array
+			for (size_t j = 0; j < buckets[i]->size(); j++)
+			{
+				data[insertedElements] = buckets[i]->at(j);
+				insertedElements++;
+			}
 		}
-	}
+    #endif
 }
 
 
