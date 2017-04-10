@@ -114,7 +114,7 @@ int main()
 	const clock_t begin_time = clock();
 	bucket_sort(unsorted, ARRAY_SIZE);
 	const clock_t end_time = clock();
-	printf("Sorted %d elements in %f seconds\n", ARRAY_SIZE, (float (end_time - begin_time))/1000);
+	printf("Sorted %d elements in %f seconds\n", ARRAY_SIZE, (float (end_time - begin_time))/CLOCKS_PER_SEC);
 	
 	//print_array(unsorted, ARRAY_SIZE);
 
