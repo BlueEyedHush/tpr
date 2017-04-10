@@ -135,10 +135,10 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 }
 
 
-int *generate_random_array(int size, int from, int to) {
+int *generate_random_array(int size, int from, int to, int seed) {
 
-	std::random_device rd;
-	std::mt19937 rng(rd());
+	std::seed_seq seed_sequence = {seed};
+	std::mt19937 rng(seed_sequence);
 	std::uniform_int_distribution<int> uni(from, to);
 
 	int *arr = new int[size];
@@ -149,8 +149,8 @@ int *generate_random_array(int size, int from, int to) {
 }
 
 int main(int argc, char* argv[]) {
-	if(argc < 3) {
-		printf("Usage: executable <array_size> <bucket_count>\n");
+	if(argc < 4) {
+		printf("Usage: executable <array_size> <bucket_count> <seed>\n");
 		return 1;
 	}
 
@@ -161,11 +161,12 @@ int main(int argc, char* argv[]) {
 
 	int array_size = atoi(argv[1]);
 	int bucket_count = atoi(argv[2]);
+	int rand_seed = atoi(argv[3]);
 
-	int *unsorted = generate_random_array(array_size, 1, 1000);
+	int *unsorted = generate_random_array(array_size, 1, 1000, rand_seed);
 
 	#if PRINT_ARRAY_CONTENTS == 1
-		print_array(unsorted, ARRAY_SIZE);
+		print_array(unsorted, array_size);
 		printf("\n");
 	#endif
 
@@ -175,7 +176,7 @@ int main(int argc, char* argv[]) {
 	printf("Sorted %d elements in %f seconds\n", array_size, (float(end_time - begin_time)) / CLOCKS_PER_SEC);
 
 	#if PRINT_ARRAY_CONTENTS == 1
-		print_array(unsorted, ARRAY_SIZE);
+		print_array(unsorted, array_size);
 	#endif
 
 	getchar();
