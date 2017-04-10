@@ -18,6 +18,8 @@ if [ "$PROJ" == "perf_meas" ]; then
     mpicc "$PROJ_DIR"main.c -cc=gcc -o "$OUT_DIR"buff -D BUFFERED -std=c99
     mpicc "$PROJ_DIR"main.c -cc=gcc -o "$OUT_DIR"sync_lat -D SYNC -D LATENCY -std=c99
     mpicc "$PROJ_DIR"main.c -cc=gcc -o "$OUT_DIR"buff_lat -D BUFFERED -D LATENCY -std=c99
+elif [ "$PROJ" == "openmp" ]; then
+    g++ -o "$OUT_DIR"exec -fopenmp -std=c++11 -Wall -Wextra "$PROJ_DIR"main.cpp
 else
     mpicc "$PROJ_DIR"main.c -cc=gcc -o "$OUT_DIR"exec -std=c99
 fi
