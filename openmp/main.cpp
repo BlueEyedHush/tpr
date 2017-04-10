@@ -49,8 +49,6 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 		}
 	#endif
 
-	const clock_t begin_time = clock();
-
 	/* array of pointer to buckets */
 	vector<int> **buckets = new vector<int> *[bucketCount];
 	#if defined(_OPENMP)
@@ -66,6 +64,8 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 		omp_init_lock(&(locks[i]));
 		#endif
 	}
+
+	const clock_t begin_time = clock();
 
 	// Populates buckets with data
 	/*
@@ -99,13 +99,6 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 		#endif
 	}
 
-	#pragma omp parallel for
-	// Sort all buckets
-	for (int i = 0; i < bucketCount; i++) {
-		sort(buckets[i]->begin(), buckets[i]->end(), pred);
-	}
-
-	// Merges buckets to array
 	#if MERGING_PARALLEL == 1
 		#if IN_OUT_SIZE_VALIDATION == 1
 			int insertedElements = 0;
@@ -114,6 +107,10 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 		#pragma omp parallel for
 		for (int i = 0; i < bucketCount; i++)
 		{
+			// sort bucket
+			sort(buckets[i]->begin(), buckets[i]->end(), pred);
+
+			// Merges buckets to array
 			size_t currBucketSize = buckets[i]->size();
 			if(currBucketSize > 0) {
 				// calculate offset
@@ -136,6 +133,13 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 			}
 		}
 	#else
+		#pragma omp parallel for
+		// Sort all buckets
+		for (int i = 0; i < bucketCount; i++) {
+			sort(buckets[i]->begin(), buckets[i]->end(), pred);
+		}
+
+		// Merges buckets to array
 		int insertedElements = 0;
 		for (int i = 0; i < bucketCount; i++) {
 			// Copy all values from bucket to array
