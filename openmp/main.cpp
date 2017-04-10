@@ -154,14 +154,14 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	#if PRINT_CONFIGURATION == 1
-		printf("Print contents: %d, parallel merging: %d, size validation: %d\n",
-		       PRINT_ARRAY_CONTENTS, MERGING_PARALLEL, IN_OUT_SIZE_VALIDATION);
-	#endif
-
 	int array_size = atoi(argv[1]);
 	int bucket_count = atoi(argv[2]);
 	int rand_seed = atoi(argv[3]);
+
+	#if PRINT_CONFIGURATION == 1
+		printf("Array size: %d, bucket count: %d, seed: %d, print contents: %d, parallel merging: %d, size validation: %d\n",
+		       array_size, bucket_count, rand_seed, PRINT_ARRAY_CONTENTS, MERGING_PARALLEL, IN_OUT_SIZE_VALIDATION);
+	#endif
 
 	int *unsorted = generate_random_array(array_size, 1, 1000, rand_seed);
 
@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
 	const clock_t begin_time = clock();
 	bucket_sort(unsorted, array_size, bucket_count);
 	const clock_t end_time = clock();
-	printf("Sorted %d elements in %f seconds\n", array_size, (float(end_time - begin_time)) / CLOCKS_PER_SEC);
+	printf("%.20f\n", (float(end_time - begin_time)) / CLOCKS_PER_SEC);
 
 	#if PRINT_ARRAY_CONTENTS == 1
 		print_array(unsorted, array_size);
