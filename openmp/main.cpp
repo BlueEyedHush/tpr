@@ -14,6 +14,7 @@
 #define IN_OUT_SIZE_VALIDATION 0
 #define SUM_VALIDATION 0
 #define EXTENDED_REPORTING 1
+#define FINE_GRAINED_LOCKING 1
 
 using namespace std;
 
@@ -59,11 +60,13 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 
 	/* array of pointer to buckets */
 	vector<int> **buckets = new vector<int> *[bucketCount];
+	omp_lock_t *locks = new omp_lock_t[bucketCount];
 
 	// Creates all buckets
 	#pragma omp parallel for
 	for (int i = 0; i < bucketCount; i++) {
 		buckets[i] = new vector<int>();
+		omp_init_lock(&(locks[i]));
 	}
 
 	// Populates buckets with data
@@ -85,19 +88,15 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 	#pragma omp parallel for
 	for (int i = 0; i < dataN; i++) {
 		int selectedBucket = (data[i] * bucketCount) / maxValue;
-		#pragma omp critical
-		buckets[selectedBucket]->push_back(data[i]);
+		#if FINE_GRAINED_LOCKING == 1
+			omp_set_lock(&(locks[selectedBucket]));
+			buckets[selectedBucket]->push_back(data[i]);
+			omp_unset_lock(&(locks[selectedBucket]));
+		#else
+			#pragma omp critical
+			buckets[selectedBucket]->push_back(data[i]);
+		#endif
 	}
-	
-	/*
-	#pragma omp parallel for
-	for (int i = 0; i < dataN; i++) {
-		int selectedBucket = (data[i] * bucketCount) / maxValue;
-		omp_set_lock(&(locks[selectedBucket]));
-		buckets[selectedBucket]->push_back(data[i]);
-		omp_unset_lock(&(locks[selectedBucket]));
-	}
-	*/
 
 	#pragma omp parallel for
 	// Sort all buckets
@@ -145,6 +144,10 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 			}
 		}
 	#endif
+
+	for (int i = 0; i < bucketCount; i++) {
+		omp_destroy_lock(&(locks[i]));
+	}
 
 	#if IN_OUT_SIZE_VALIDATION == 1
 		if (insertedElements != dataN) {
