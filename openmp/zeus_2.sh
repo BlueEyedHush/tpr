@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #PBS -l walltime=0:10:00
-#PBS -l pmem=64mb
+#PBS -l mem=1gb
 #PBS -l nodes=2:ppn=12
 #PBS -N borysenkosort
 #PBS -A plgborysenko2017a
