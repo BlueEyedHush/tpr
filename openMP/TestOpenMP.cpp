@@ -1,7 +1,3 @@
-// TestOpenMP.cpp : Defines the entry point for the console application.
-//
-
-#include "stdafx.h"
 
 #include <omp.h>
 #include <stdlib.h>
@@ -10,6 +6,7 @@
 #include <vector>
 #include <random>
 #include <ctime>
+#include <climits>
 
 using namespace std;
 
@@ -34,28 +31,21 @@ static void print_array(int *data, int count) {
 		printf("]");
 }
 
-// Finds minimum and maximum value in data array
-// Parameters:
-// data - array of integers to search from
-// count - elements in data array
-// Returns:
-// minMax[0] - minium value
-// minMax[1] - maximum value
-static int* find_min_max(int *data, int count) {
-	int minMax[2] = { data[0], data[0] };
+// Finds maximum value in data array
+static int find_max(int *data, int count) {
+	int max = INT_MIN;
 
 	for (int i = 1; i < count; i++)
 	{
-		if (data[i] > minMax[1])
-			minMax[1] = data[i];
-		if (data[i] < minMax[0])
-			minMax[0] = data[i];
+		if (data[i] > max)
+			max = data[i];
 	}
-	return minMax;
+
+	return max;
 }
 
 static void bucket_sort(int* data, int count) {
-	int maxValue = find_min_max(data, count)[1];
+	int maxValue = find_max(data, count);
 
 	int bucketCount = count;
 	vector<int>* bucket = new vector<int>[bucketCount];
@@ -102,7 +92,7 @@ static void bucket_sort(int* data, int count) {
 int* generate_random_array(int size, int from, int to) {
 
 	std::random_device rd;
-	std:mt19937 rng(rd());
+	std::mt19937 rng(rd());
 	std::uniform_int_distribution<int> uni(from, to);
 
 	int *arr = new int[size];
