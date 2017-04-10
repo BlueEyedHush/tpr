@@ -39,7 +39,7 @@ for bucket in $BUCKETS; do
 
             for thread in $THREADS; do
                 export OMP_NUM_THREADS=$thread
-                "$WITHOUT_EXEC" $size $bucket $seed $ITERATIONS | tee -a "$RESULT_FILE"
+                "$WITH_EXEC" $size $bucket $seed $ITERATIONS | tee -a "$RESULT_FILE"
             done
         done
     done

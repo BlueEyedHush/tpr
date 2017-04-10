@@ -189,11 +189,19 @@ int main(int argc, char* argv[]) {
 	int rand_seed = atoi(argv[3]);
 	int iterations = atoi(argv[4]);
 
+	#if defined(_OPENMP)
+		int thread_num = -2;
+		#pragma omp parallel
+		thread_num =  omp_get_num_threads();
+	#else
+		int thread_num = -1;
+	#endif
+
 	#if PRINT_CONFIGURATION == 1
-		printf("Array size: %d, bucket count: %d, seed: %d, iterations: %d, "
-			   "print contents: %d, parallel merging: %d, size validation: %d\n",
-		       array_size, bucket_count, rand_seed, iterations,
-		       PRINT_ARRAY_CONTENTS, MERGING_PARALLEL, IN_OUT_SIZE_VALIDATION);
+		printf("Array size: %15d, bucket count: %5d, seed: %d, iterations: %d, thread_num: %3d\n",
+			   /*"print contents: %d, parallel merging: %d, size validation: %d\n",*/
+		       array_size, bucket_count, rand_seed, iterations, thread_num
+		       /*PRINT_ARRAY_CONTENTS, MERGING_PARALLEL, IN_OUT_SIZE_VALIDATION*/);
 	#endif
 
 	int *unsorted = generate_random_array(array_size, 1, 1000, rand_seed);
@@ -213,12 +221,6 @@ int main(int argc, char* argv[]) {
 		const float duration = (float(clock() - begin_time)) / CLOCKS_PER_SEC;
 
 		#if EXTENDED_REPORTING == 1
-			#if defined(_OPENMP)
-				int thread_num =  omp_get_thread_num();
-			#else
-				int thread_num = 0;
-			#endif
-
 			printf("%d, %d, %d, %.20f\n", array_size, bucket_count, thread_num, duration);
 		#else
 			printf("%.20f\n", duration);
