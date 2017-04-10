@@ -53,13 +53,18 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 
 	/* array of pointer to buckets */
 	vector<int> **buckets = new vector<int> *[bucketCount];
+	#if defined(_OPENMP)
 	omp_lock_t *locks = new omp_lock_t[bucketCount];
+	#endif
 
 	// Creates all buckets
 	#pragma omp parallel for
 	for (int i = 0; i < bucketCount; i++) {
 		buckets[i] = new vector<int>();
+
+		#if defined(_OPENMP) && FINE_GRAINED_LOCKING == 1
 		omp_init_lock(&(locks[i]));
+		#endif
 	}
 
 	// Populates buckets with data
@@ -80,12 +85,16 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 	#pragma omp parallel for
 	for (int i = 0; i < dataN; i++) {
 		int selectedBucket = (data[i] * bucketCount) / (MAX_VALUE+1);
-		#if FINE_GRAINED_LOCKING == 1
-			omp_set_lock(&(locks[selectedBucket]));
-			buckets[selectedBucket]->push_back(data[i]);
-			omp_unset_lock(&(locks[selectedBucket]));
+		#if defined(_OPENMP)
+			#if FINE_GRAINED_LOCKING == 1
+				omp_set_lock(&(locks[selectedBucket]));
+				buckets[selectedBucket]->push_back(data[i]);
+				omp_unset_lock(&(locks[selectedBucket]));
+			#else
+				#pragma omp critical
+				buckets[selectedBucket]->push_back(data[i]);
+			#endif
 		#else
-			#pragma omp critical
 			buckets[selectedBucket]->push_back(data[i]);
 		#endif
 	}
@@ -141,9 +150,13 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 
 	for (int i = 0; i < bucketCount; i++) {
 		delete buckets[i];
-		omp_destroy_lock(&(locks[i]));
+		#if defined(_OPENMP) && FINE_GRAINED_LOCKING == 1
+			omp_destroy_lock(&(locks[i]));
+		#endif
 	}
-	delete[] locks;
+	#if defined(_OPENMP) && FINE_GRAINED_LOCKING == 1
+		delete[] locks;
+	#endif
 	delete[] buckets;
 
 	#if IN_OUT_SIZE_VALIDATION == 1
