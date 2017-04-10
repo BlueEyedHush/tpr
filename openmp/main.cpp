@@ -12,6 +12,7 @@
 #define PRINT_ARRAY_CONTENTS 0
 #define MERGING_PARALLEL 0
 #define IN_OUT_SIZE_VALIDATION 0
+#define SUM_VALIDATION 0
 #define EXTENDED_REPORTING 1
 
 using namespace std;
@@ -49,6 +50,13 @@ static int find_max(int *data, int count) {
 }
 
 static void bucket_sort(int *data, int dataN, int bucketCount) {
+	#if SUM_VALIDATION == 1
+		long long sum_before_sorting = 0L;
+		for(int i = 0; i < dataN; i++) {
+			sum_before_sorting += data[i];
+		}
+	#endif
+
 	/* array of pointer to buckets */
 	vector<int> **buckets = new vector<int> *[bucketCount];
 
@@ -131,6 +139,17 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 	#if IN_OUT_SIZE_VALIDATION == 1
 		if (insertedElements != dataN) {
 			printf("[ERROR] output array has less elements than input array (out: %d, in: %d) !!!\n", insertedElements, dataN);
+		}
+	#endif
+
+	#if SUM_VALIDATION == 1
+		long long sum_after_sorting = 0L;
+		for(int i = 0; i < dataN; i++) {
+			sum_after_sorting += data[i];
+		}
+
+		if(sum_before_sorting != sum_after_sorting) {
+			printf("[ERROR] sums before (%lld) and after (%lld) different !!!\n", sum_before_sorting, sum_after_sorting);
 		}
 	#endif
 }
