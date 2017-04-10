@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 project(tpr)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 
 # MPI
 find_package(MPI REQUIRED)
@@ -21,3 +22,13 @@ target_link_libraries(perf_meas ${MPI_C_LIBRARIES})
 set(REDUCE_FILES reduce/main.c)
 add_executable(reduce ${PERFMEAS_FILES})
 target_link_libraries(reduce ${MPI_C_LIBRARIES})
+
+# openmp
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
+set(OPENMP_FILES openmp/main.cpp)
+add_executable(openmp ${OPENMP_FILES})
