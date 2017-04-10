@@ -16,6 +16,7 @@
 #define EXTENDED_REPORTING 1
 #define FINE_GRAINED_LOCKING 1
 
+#define VERSION "7f2f0ddfa4"
 #define MAX_VALUE 1000
 
 using namespace std;
@@ -196,6 +197,7 @@ int main(int argc, char* argv[]) {
 	#endif
 
 	#if PRINT_CONFIGURATION == 1
+		printf("Version: %s\n", VERSION);
 		printf("Array size: %15d, bucket count: %5d, seed: %d, iterations: %d, thread_num: %3d\n",
 			   /*"print contents: %d, parallel merging: %d, size validation: %d\n",*/
 		       array_size, bucket_count, rand_seed, iterations, thread_num
