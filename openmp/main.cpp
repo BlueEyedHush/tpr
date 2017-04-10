@@ -16,6 +16,8 @@
 #define EXTENDED_REPORTING 1
 #define FINE_GRAINED_LOCKING 1
 
+#define MAX_VALUE 1000
+
 using namespace std;
 
 struct predicate {
@@ -36,18 +38,6 @@ static void print_array(int *data, int count) {
 		}
 
 	printf("]");
-}
-
-// Finds maximum value in data array
-static int find_max(int *data, int count) {
-	int max = INT_MIN;
-
-	for (int i = 0; i < count; i++) {
-		if (data[i] > max)
-			max = data[i];
-	}
-
-	return max;
 }
 
 static void bucket_sort(int *data, int dataN, int bucketCount) {
@@ -84,10 +74,9 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 	 * Solution: increase maxValue by 1
 	 * */
 
-	const int maxValue = find_max(data, dataN) + 1;
 	#pragma omp parallel for
 	for (int i = 0; i < dataN; i++) {
-		int selectedBucket = (data[i] * bucketCount) / maxValue;
+		int selectedBucket = (data[i] * bucketCount) / (MAX_VALUE+1);
 		#if FINE_GRAINED_LOCKING == 1
 			omp_set_lock(&(locks[selectedBucket]));
 			buckets[selectedBucket]->push_back(data[i]);
@@ -207,7 +196,7 @@ int main(int argc, char* argv[]) {
 		       /*PRINT_ARRAY_CONTENTS, MERGING_PARALLEL, IN_OUT_SIZE_VALIDATION*/);
 	#endif
 
-	int *unsorted = generate_random_array(array_size, 1, 1000, rand_seed);
+	int *unsorted = generate_random_array(array_size, 1, MAX_VALUE, rand_seed);
 
 	#if PRINT_ARRAY_CONTENTS == 1
 		print_array(unsorted, array_size);
