@@ -8,6 +8,8 @@
 #include <ctime>
 #include <climits>
 
+#define PRINT_ARRAY_CONTENTS 0
+
 using namespace std;
 
 struct predicate {
@@ -35,7 +37,7 @@ static void print_array(int *data, int count) {
 static int find_max(int *data, int count) {
 	int max = INT_MIN;
 
-	for (int i = 1; i < count; i++)
+	for (int i = 0; i < count; i++)
 	{
 		if (data[i] > max)
 			max = data[i];
@@ -48,42 +50,41 @@ static void bucket_sort(int* data, int count) {
 	int maxValue = find_max(data, count);
 
 	int bucketCount = count;
-	vector<int>* bucket = new vector<int>[bucketCount];
+	/* array of pointer to buckets */
+	vector<int>** buckets = new vector<int>*[bucketCount];
 
 	// Creates all buckets
 	#pragma omp parallel for
 	for (int i = 0; i < bucketCount; i++)
 	{
-		bucket[i] = vector<int>();
+		buckets[i] = new vector<int>();
 	}
 
 	// Populates buckets with data
+	#pragma omp parallel for
 	for (int i = 0; i < count; i++)
 	{
 		int selectedBucket = (data[i] * count) / (maxValue + 1);
-		bucket[selectedBucket].push_back(data[i]);
+		#pragma omp critical
+		buckets[selectedBucket]->push_back(data[i]);
 	}
 
 	#pragma omp parallel for
 	// Sort all buckets
 	for (int i = 0; i < bucketCount; i++)
 	{
-		sort(bucket[i].begin(), bucket[i].end(), pred);
+		sort(buckets[i]->begin(), buckets[i]->end(), pred);
 	}
 
 	// Merges buckets to array
 	int insertedElements = 0;
 	for (int i = 0; i < bucketCount; i++)
 	{
-		int bucketSize = bucket[i].size();
-		if (bucketSize > 0)
+		// Copy all values from bucket to array
+		for (size_t j = 0; j < buckets[i]->size(); j++)
 		{
-			// Copy all values from bucket to array
-			for (int j = 0; j < bucketSize; j++)
-			{
-				data[insertedElements] = bucket[i][j];
-				insertedElements++;
-			}
+			data[insertedElements] = buckets[i]->at(j);
+			insertedElements++;
 		}
 	}
 }
@@ -108,15 +109,19 @@ int main()
 {
 	int *unsorted = generate_random_array(ARRAY_SIZE, 1, 1000);
 
-	//print_array(unsorted, ARRAY_SIZE);
-	//printf("\n");
+    #if PRINT_ARRAY_CONTENTS == 1
+        print_array(unsorted, ARRAY_SIZE);
+        printf("\n");
+    #endif
 
 	const clock_t begin_time = clock();
 	bucket_sort(unsorted, ARRAY_SIZE);
 	const clock_t end_time = clock();
 	printf("Sorted %d elements in %f seconds\n", ARRAY_SIZE, (float (end_time - begin_time))/CLOCKS_PER_SEC);
-	
-	//print_array(unsorted, ARRAY_SIZE);
+
+    #if PRINT_ARRAY_CONTENTS == 1
+	    print_array(unsorted, ARRAY_SIZE);
+    #endif
 
 	getchar();
 	return 0;
