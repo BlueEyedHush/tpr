@@ -16,7 +16,7 @@
 #define EXTENDED_REPORTING 1
 #define FINE_GRAINED_LOCKING 1
 
-#define VERSION "47c2a833310b"
+#define VERSION "02ee50aad0"
 #define MAX_VALUE 1000
 
 using namespace std;
