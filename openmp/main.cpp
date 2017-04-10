@@ -8,8 +8,10 @@
 #include <ctime>
 #include <climits>
 
+#define PRINT_CONFIGURATION 0
 #define PRINT_ARRAY_CONTENTS 0
 #define MERGING_PARALLEL 0
+#define IN_OUT_SIZE_VALIDATION 0
 
 using namespace std;
 
@@ -86,6 +88,10 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 
 	// Merges buckets to array
 	#if MERGING_PARALLEL == 1
+		#if IN_OUT_SIZE_VALIDATION == 1
+			int insertedElements = 0;
+		#endif
+
 		#pragma omp parallel for
 		for (int i = 0; i < bucketCount; i++)
 		{
@@ -103,6 +109,11 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 					data[nextElementId] = buckets[i]->at(j);
 					nextElementId++;
 				}
+
+				#if IN_OUT_SIZE_VALIDATION == 1
+					#pragma omp atomic update
+					insertedElements += currBucketSize;
+				#endif
 			}
 		}
 	#else
@@ -113,6 +124,12 @@ static void bucket_sort(int *data, int dataN, int bucketCount) {
 				data[insertedElements] = buckets[i]->at(j);
 				insertedElements++;
 			}
+		}
+	#endif
+
+	#if IN_OUT_SIZE_VALIDATION == 1
+		if (insertedElements != dataN) {
+			printf("[ERROR] output array has less elements than input array (out: %d, in: %d) !!!\n", insertedElements, dataN);
 		}
 	#endif
 }
@@ -136,6 +153,11 @@ int main(int argc, char* argv[]) {
 		printf("Usage: executable <array_size> <bucket_count>\n");
 		return 1;
 	}
+
+	#if PRINT_CONFIGURATION == 1
+		printf("Print contents: %d, parallel merging: %d, size validation: %d\n",
+		       PRINT_ARRAY_CONTENTS, MERGING_PARALLEL, IN_OUT_SIZE_VALIDATION);
+	#endif
 
 	int array_size = atoi(argv[1]);
 	int bucket_count = atoi(argv[2]);
