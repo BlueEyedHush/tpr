@@ -45,10 +45,7 @@ static int find_max(int *data, int count) {
 	return max;
 }
 
-static void bucket_sort(int *data, int count) {
-	int maxValue = find_max(data, count);
-
-	int bucketCount = count;
+static void bucket_sort(int *data, int dataN, int bucketCount) {
 	/* array of pointer to buckets */
 	vector<int> **buckets = new vector<int> *[bucketCount];
 
@@ -59,9 +56,24 @@ static void bucket_sort(int *data, int count) {
 	}
 
 	// Populates buckets with data
+	/*
+	 * How to calculate which bucket number should go to?
+	 * id = value/bucketWidth
+	 *
+	 * How to calculate bucket width?
+	 * bucketWidth = maxValue/bucketCount
+	 *
+	 * Problem:
+	 * when value == maxValue,
+	 * id == value/(maxValue/bucketCount) == value*bucketCount/maxValue == bucketCount
+	 * but max allowed id is bucketCount-1
+	 * Solution: increase maxValue by 1
+	 * */
+
+	const int maxValue = find_max(data, dataN) + 1;
 	#pragma omp parallel for
-	for (int i = 0; i < count; i++) {
-		int selectedBucket = (data[i] * count) / (maxValue + 1);
+	for (int i = 0; i < dataN; i++) {
+		int selectedBucket = (data[i] * bucketCount) / maxValue;
 		#pragma omp critical
 		buckets[selectedBucket]->push_back(data[i]);
 	}
@@ -119,11 +131,16 @@ int *generate_random_array(int size, int from, int to) {
 	return arr;
 }
 
+int main(int argc, char* argv[]) {
+	if(argc < 3) {
+		printf("Usage: executable <array_size> <bucket_count>\n");
+		return 1;
+	}
 
-static const int ARRAY_SIZE = 1000000;
+	int array_size = atoi(argv[1]);
+	int bucket_count = atoi(argv[2]);
 
-int main() {
-	int *unsorted = generate_random_array(ARRAY_SIZE, 1, 1000);
+	int *unsorted = generate_random_array(array_size, 1, 1000);
 
 	#if PRINT_ARRAY_CONTENTS == 1
 		print_array(unsorted, ARRAY_SIZE);
@@ -131,9 +148,9 @@ int main() {
 	#endif
 
 	const clock_t begin_time = clock();
-	bucket_sort(unsorted, ARRAY_SIZE);
+	bucket_sort(unsorted, array_size, bucket_count);
 	const clock_t end_time = clock();
-	printf("Sorted %d elements in %f seconds\n", ARRAY_SIZE, (float(end_time - begin_time)) / CLOCKS_PER_SEC);
+	printf("Sorted %d elements in %f seconds\n", array_size, (float(end_time - begin_time)) / CLOCKS_PER_SEC);
 
 	#if PRINT_ARRAY_CONTENTS == 1
 		print_array(unsorted, ARRAY_SIZE);
