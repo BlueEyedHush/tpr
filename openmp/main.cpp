@@ -8,7 +8,7 @@
 #include <ctime>
 #include <climits>
 
-#define PRINT_CONFIGURATION 0
+#define PRINT_CONFIGURATION 1
 #define PRINT_ARRAY_CONTENTS 0
 #define MERGING_PARALLEL 0
 #define IN_OUT_SIZE_VALIDATION 0
@@ -149,18 +149,21 @@ int *generate_random_array(int size, int from, int to, int seed) {
 }
 
 int main(int argc, char* argv[]) {
-	if(argc < 4) {
-		printf("Usage: executable <array_size> <bucket_count> <seed>\n");
+	if(argc < 5) {
+		printf("Usage: executable <array_size> <bucket_count> <seed> <iterations>\n");
 		return 1;
 	}
 
 	int array_size = atoi(argv[1]);
 	int bucket_count = atoi(argv[2]);
 	int rand_seed = atoi(argv[3]);
+	int iterations = atoi(argv[4]);
 
 	#if PRINT_CONFIGURATION == 1
-		printf("Array size: %d, bucket count: %d, seed: %d, print contents: %d, parallel merging: %d, size validation: %d\n",
-		       array_size, bucket_count, rand_seed, PRINT_ARRAY_CONTENTS, MERGING_PARALLEL, IN_OUT_SIZE_VALIDATION);
+		printf("Array size: %d, bucket count: %d, seed: %d, iterations: %d, "
+			   "print contents: %d, parallel merging: %d, size validation: %d\n",
+		       array_size, bucket_count, rand_seed, iterations,
+		       PRINT_ARRAY_CONTENTS, MERGING_PARALLEL, IN_OUT_SIZE_VALIDATION);
 	#endif
 
 	int *unsorted = generate_random_array(array_size, 1, 1000, rand_seed);
@@ -170,10 +173,16 @@ int main(int argc, char* argv[]) {
 		printf("\n");
 	#endif
 
-	const clock_t begin_time = clock();
+	// first iteration, non-timed (warmup)
 	bucket_sort(unsorted, array_size, bucket_count);
-	const clock_t end_time = clock();
-	printf("%.20f\n", (float(end_time - begin_time)) / CLOCKS_PER_SEC);
+
+	// timed iterations
+	for(int i = 0; i < iterations; i++) {
+		const clock_t begin_time = clock();
+		bucket_sort(unsorted, array_size, bucket_count);
+		const clock_t end_time = clock();
+		printf("%.20f\n", (float(end_time - begin_time)) / CLOCKS_PER_SEC);
+	}
 
 	#if PRINT_ARRAY_CONTENTS == 1
 		print_array(unsorted, array_size);
