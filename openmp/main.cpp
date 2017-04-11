@@ -16,6 +16,7 @@
 #define SUM_VALIDATION 0
 #define EXTENDED_REPORTING 2 /* 1 enabled, 2 - with profiling info */
 #define FINE_GRAINED_LOCKING 1
+#define CALC_AVERAGE 1
 
 #define VERSION "02ee50aad0"
 #define MAX_VALUE 1000.0
@@ -47,6 +48,12 @@ typedef struct times {
 	float mid;
 	float end;
 } times;
+
+times *init_times(times *t) {
+	t->mid = 0.0f;
+	t->end = 0.0f;
+	return t;
+}
 
 static times bucket_sort(double *data, int dataN, int bucketCount) {
 	#if SUM_VALIDATION == 1
@@ -246,15 +253,36 @@ int main(int argc, char* argv[]) {
 	bucket_sort(unsorted, array_size, bucket_count);
 
 	// timed iterations
+	int tsN = (CALC_AVERAGE == 1) ? 1 : iterations;
+	times *ts = new times[tsN];
+	for(int i = 0; i < tsN; i++) {
+		init_times(&(ts[i]));
+	}
+
 	for(int i = 0; i < iterations; i++) {
 		const times t = bucket_sort(unsorted, array_size, bucket_count);
 
+		#if CALC_AVERAGE == 1
+			ts[0].mid += t.mid;
+			ts[0].end += t.end;
+		#else
+			ts[i] = t;
+		#endif
+	}
+
+	#if CALC_AVERAGE == 1
+		ts[0].mid /= iterations;
+		ts[0].end /= iterations;
+	#endif
+
+	for(int i = 0; i < tsN; i++) {
+		const times t = ts[i];
 		#if EXTENDED_REPORTING == 2
 			printf("%d\t%d\t%d\t%.20f\t%.1f\t%.20f\n", array_size, bucket_count, thread_num, t.mid, t.mid/t.end, t.end);
 		#elif EXTENDED_REPORTING == 1
-			printf("%d\t%d\t%d\t%.20f\n", array_size, bucket_count, thread_num, duration);
+			printf("%d\t%d\t%d\t%.20f\n", array_size, bucket_count, thread_num, t.end);
 		#else
-			printf("%.20f\n", duration);
+			printf("%.20f\n", t.end);
 		#endif
 	}
 
