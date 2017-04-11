@@ -9,7 +9,7 @@
 #include <climits>
 #include <cmath>
 
-#define PRINT_CONFIGURATION 1
+#define PRINT_CONFIGURATION 0
 #define PRINT_ARRAY_CONTENTS 0
 #define MERGING_PARALLEL 1
 #define IN_OUT_SIZE_VALIDATION 0
