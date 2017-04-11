@@ -13,7 +13,7 @@
 #define MERGING_PARALLEL 1
 #define IN_OUT_SIZE_VALIDATION 0
 #define SUM_VALIDATION 0
-#define EXTENDED_REPORTING 1
+#define EXTENDED_REPORTING 2 /* 1 enabled, 2 - with profiling info */
 #define FINE_GRAINED_LOCKING 1
 
 #define VERSION "02ee50aad0"
@@ -41,7 +41,12 @@ static void print_array(int *data, int count) {
 	printf("]");
 }
 
-static float bucket_sort(int *data, int dataN, int bucketCount) {
+typedef struct times {
+	float mid;
+	float end;
+} times;
+
+static times bucket_sort(int *data, int dataN, int bucketCount) {
 	#if SUM_VALIDATION == 1
 		long long sum_before_sorting = 0L;
 		for(int i = 0; i < dataN; i++) {
@@ -99,6 +104,8 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 		#endif
 	}
 
+	clock_t middle_time = clock();
+
 	#if MERGING_PARALLEL == 1
 		#if IN_OUT_SIZE_VALIDATION == 1
 			int insertedElements = 0;
@@ -149,8 +156,11 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 			}
 		}
 	#endif
+	const float end_time = clock();
 
-	const float duration = (float(clock() - begin_time)) / CLOCKS_PER_SEC;
+	times result;
+	result.mid = (float(middle_time - begin_time)) / CLOCKS_PER_SEC;
+	result.end = (float(end_time - begin_time)) / CLOCKS_PER_SEC;
 
 	for (int i = 0; i < bucketCount; i++) {
 		delete buckets[i];
@@ -180,7 +190,7 @@ static float bucket_sort(int *data, int dataN, int bucketCount) {
 		}
 	#endif
 
-	return duration;
+	return result;
 }
 
 
@@ -219,9 +229,7 @@ int main(int argc, char* argv[]) {
 	#if PRINT_CONFIGURATION == 1
 		printf("Version: %s\n", VERSION);
 		printf("Array size: %15d, bucket count: %5d, seed: %d, iterations: %d, thread_num: %3d\n",
-			   /*"print contents: %d, parallel merging: %d, size validation: %d\n",*/
-		       array_size, bucket_count, rand_seed, iterations, thread_num
-		       /*PRINT_ARRAY_CONTENTS, MERGING_PARALLEL, IN_OUT_SIZE_VALIDATION*/);
+		       array_size, bucket_count, rand_seed, iterations, thread_num);
 	#endif
 
 	int *unsorted = generate_random_array(array_size, 1, MAX_VALUE, rand_seed);
@@ -236,9 +244,11 @@ int main(int argc, char* argv[]) {
 
 	// timed iterations
 	for(int i = 0; i < iterations; i++) {
-		const float duration = bucket_sort(unsorted, array_size, bucket_count);
+		const times t = bucket_sort(unsorted, array_size, bucket_count);
 
-		#if EXTENDED_REPORTING == 1
+		#if EXTENDED_REPORTING == 2
+			printf("%d\t%d\t%d\t%.20f\t%.1f\t%.20f\n", array_size, bucket_count, thread_num, t.mid, t.mid/t.end, t.end);
+		#elif EXTENDED_REPORTING == 1
 			printf("%d\t%d\t%d\t%.20f\n", array_size, bucket_count, thread_num, duration);
 		#else
 			printf("%.20f\n", duration);
