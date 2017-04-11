@@ -7,6 +7,7 @@
 #include <random>
 #include <ctime>
 #include <climits>
+#include <cmath>
 
 #define PRINT_CONFIGURATION 1
 #define PRINT_ARRAY_CONTENTS 0
@@ -17,25 +18,26 @@
 #define FINE_GRAINED_LOCKING 1
 
 #define VERSION "02ee50aad0"
-#define MAX_VALUE 1000
+#define MAX_VALUE 1000.0
+#define EPSILON 1e-6
 
 using namespace std;
 
 struct predicate {
-	bool operator()(int i, int j) { return (i < j); }
+	bool operator()(double i, double j) { return (i < j); }
 } pred;
 
 //Prints array
 // Parameters:
 // data - array of integers to search from
 // count - elements in data array
-static void print_array(int *data, int count) {
+static void print_array(double *data, int count) {
 	printf("[");
 	for (int i = 0; i < count; i++)
 		if (i != count - 1) {
-			printf("%d, ", data[i]);
+			printf("%f, ", data[i]);
 		} else {
-			printf("%d", data[i]);
+			printf("%f", data[i]);
 		}
 
 	printf("]");
@@ -46,16 +48,16 @@ typedef struct times {
 	float end;
 } times;
 
-static times bucket_sort(int *data, int dataN, int bucketCount) {
+static times bucket_sort(double *data, int dataN, int bucketCount) {
 	#if SUM_VALIDATION == 1
-		long long sum_before_sorting = 0L;
+		long double sum_before_sorting = 0.0;
 		for(int i = 0; i < dataN; i++) {
 			sum_before_sorting += data[i];
 		}
 	#endif
 
 	/* array of pointer to buckets */
-	vector<int> **buckets = new vector<int> *[bucketCount];
+	vector<double> **buckets = new vector<double> *[bucketCount];
 	#if defined(_OPENMP)
 	omp_lock_t *locks = new omp_lock_t[bucketCount];
 	#endif
@@ -63,7 +65,7 @@ static times bucket_sort(int *data, int dataN, int bucketCount) {
 	// Creates all buckets
 	#pragma omp parallel for
 	for (int i = 0; i < bucketCount; i++) {
-		buckets[i] = new vector<int>();
+		buckets[i] = new vector<double>();
 
 		#if defined(_OPENMP) && FINE_GRAINED_LOCKING == 1
 		omp_init_lock(&(locks[i]));
@@ -89,7 +91,7 @@ static times bucket_sort(int *data, int dataN, int bucketCount) {
 
 	#pragma omp parallel for
 	for (int i = 0; i < dataN; i++) {
-		int selectedBucket = (data[i] * bucketCount) / (MAX_VALUE+1);
+		int selectedBucket = int ((data[i] * bucketCount) / (MAX_VALUE+1));
 		#if defined(_OPENMP)
 			#if FINE_GRAINED_LOCKING == 1
 				omp_set_lock(&(locks[selectedBucket]));
@@ -180,13 +182,14 @@ static times bucket_sort(int *data, int dataN, int bucketCount) {
 	#endif
 
 	#if SUM_VALIDATION == 1
-		long long sum_after_sorting = 0L;
+		long double sum_after_sorting = 0.0;
 		for(int i = 0; i < dataN; i++) {
 			sum_after_sorting += data[i];
 		}
 
-		if(sum_before_sorting != sum_after_sorting) {
-			printf("[ERROR] sums before (%lld) and after (%lld) different !!!\n", sum_before_sorting, sum_after_sorting);
+		long double diff = fabs(sum_before_sorting - sum_after_sorting);
+		if(diff > EPSILON) {
+			printf("[ERROR] sums before and after differ by (%Lf.10) !!!\n", diff);
 		}
 	#endif
 
@@ -194,13 +197,13 @@ static times bucket_sort(int *data, int dataN, int bucketCount) {
 }
 
 
-int *generate_random_array(int size, int from, int to, int seed) {
+double *generate_random_array(int size, double from, double to, int seed) {
 
 	std::seed_seq seed_sequence = {seed};
 	std::mt19937 rng(seed_sequence);
-	std::uniform_int_distribution<int> uni(from, to);
+	std::uniform_real_distribution<double> uni(from, to);
 
-	int *arr = new int[size];
+	double *arr = new double[size];
 	for (int i = 0; i < size; i++) {
 		arr[i] = uni(rng);
 	}
@@ -232,7 +235,7 @@ int main(int argc, char* argv[]) {
 		       array_size, bucket_count, rand_seed, iterations, thread_num);
 	#endif
 
-	int *unsorted = generate_random_array(array_size, 1, MAX_VALUE, rand_seed);
+	double *unsorted = generate_random_array(array_size, 1, MAX_VALUE, rand_seed);
 
 	#if PRINT_ARRAY_CONTENTS == 1
 		print_array(unsorted, array_size);
