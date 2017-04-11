@@ -1,4 +1,4 @@
-fname = 'zeus_alina.out'
+fname = 'zeus_alina_2.out'
 size1 = 100000
 size2 = 1000000
 size3 = 10000000
