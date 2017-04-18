@@ -7,3 +7,4 @@ results/
 openmp/main
 openmp/main_omp
 openmp/results.out
+openmp/sync_with_zeus.sh

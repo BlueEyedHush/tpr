@@ -3,4 +3,4 @@
 REL_DIR="$(dirname "${BASH_SOURCE[0]}")"
 DIR="$(readlink -e $REL_DIR)"
 
-rsync -avzr "$DIR"/. plgblueeyedhush@zeus.cyfronet.pl:/people/plgblueeyedhush/openmp
+sshpass -p 97e03130B234 rsync -avzr "$DIR"/. plgblueeyedhush@zeus.cyfronet.pl:/people/plgblueeyedhush/openmp
