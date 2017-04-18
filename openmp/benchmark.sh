@@ -1,28 +1,35 @@
 #!/usr/bin/env bash
 
-REL_DIR="$(dirname "${BASH_SOURCE[0]}")"
-DIR="$(readlink -e $REL_DIR)"
-
 # miscellaneous constants
-RESULT_FILE="$DIR"/results.out
+RESULT_FILE=results.out
 
-BUCKETS="50 5000 25000 125000 1000000"
-THREADS="1 2 4 5 6 7 8 10 12 14"
-SIZES="100000 1000000 10000000"
-ITERATIONS=3
+BUCKETS="100000"
+THREADS="1 4 8 12"
+SIZES="10000000"
+ITERATIONS=1
 SEEDS=5
 
-# load required modules
-module load plgrid/tools/gcc/
+if [ -z $1 ]; then
+    echo "Username (without plg prefix) must be passed as first argument"
+    exit 1
+else
+    USER=$1
+fi
 
+# load required modules
+module load plgrid/tools/gcc/5.4.0
+
+DIR="/people/plg${USER}/openmp"
+echo "$DIR"
+pushd "$DIR"
 # compile in 2 versions: with and without OpenMP
 echo "compiling"
 
-WITHOUT_EXEC="$DIR"/main
-WITH_EXEC="$DIR"/main_omp
+WITHOUT_EXEC="./main"
+WITH_EXEC="./main_omp"
 
-g++ -o "$WITH_EXEC" -fopenmp -std=c++11 -O3 "$DIR"/main.cpp
-g++ -o "$WITHOUT_EXEC" -std=c++11 -O3 "$DIR"/main.cpp
+g++ -o "$WITH_EXEC" -fopenmp -std=c++11 -O3 main.cpp
+g++ -o "$WITHOUT_EXEC" -std=c++11 -O3 main.cpp
 
 # gather data
 echo "running"
@@ -39,3 +46,5 @@ for bucket in $BUCKETS; do
         done
     done
 done
+
+popd
