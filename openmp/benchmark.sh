@@ -6,7 +6,7 @@ RESULT_FILE=results.out
 BUCKETS="100000"
 THREADS="1 4 8 12"
 SIZES="10000000"
-ITERATIONS=1
+ITERATIONS=3
 SEEDS=5
 
 if [ -z $1 ]; then
@@ -19,7 +19,12 @@ fi
 # load required modules
 module load plgrid/tools/gcc/5.4.0
 
-DIR="/people/plg${USER}/openmp"
+if [ ! -z $TPR_DEBUG ]; then
+    DIR="."
+else
+    DIR="/people/plg${USER}/openmp"
+fi
+
 echo "$DIR"
 pushd "$DIR"
 # compile in 2 versions: with and without OpenMP
