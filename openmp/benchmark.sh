@@ -1,13 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-#PBS -l walltime=0:10:00
-#PBS -l mem=1gb
-#PBS -l nodes=2:ppn=12
-#PBS -N borysenkosort
-#PBS -A plgborysenko2017a
+REL_DIR="$(dirname "${BASH_SOURCE[0]}")"
+DIR="$(readlink -e $REL_DIR)"
 
 # miscellaneous constants
-RESULT_FILE="results.out"
+RESULT_FILE="$DIR"/results.out
 
 BUCKETS="50 5000 25000 125000 1000000"
 THREADS="1 2 4 5 6 7 8 10 12 14"
@@ -18,16 +15,14 @@ SEEDS=5
 # load required modules
 module load plgrid/tools/gcc/
 
-pushd /people/plgborysenko/openmp
-
 # compile in 2 versions: with and without OpenMP
 echo "compiling"
 
-WITHOUT_EXEC="./main"
-WITH_EXEC="./main_omp"
+WITHOUT_EXEC="$DIR"/main
+WITH_EXEC="$DIR"/main_omp
 
-g++ -o "$WITH_EXEC" -fopenmp -std=c++11 -O3 main.cpp
-g++ -o "$WITHOUT_EXEC" -std=c++11 -O3 main.cpp
+g++ -o "$WITH_EXEC" -fopenmp -std=c++11 -O3 "$DIR"/main.cpp
+g++ -o "$WITHOUT_EXEC" -std=c++11 -O3 "$DIR"/main.cpp
 
 # gather data
 echo "running"
@@ -44,5 +39,3 @@ for bucket in $BUCKETS; do
         done
     done
 done
-
-popd
