@@ -67,12 +67,12 @@ static void print_array(double *data, int count) {
 }
 
 struct statistics {
-	clock_t start;
-	clock_t mid;
+	double start;
+	double mid;
 	#if SECOND_PART_PARALLEL < 2
-	clock_t after_sort;
+	double after_sort;
 	#endif
-	clock_t end;
+	double end;
 
 	#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
 	int init_thread_no[MAX_THREADS];
@@ -110,10 +110,6 @@ statistics *init_stats(statistics *t) {
 	#endif
 
 	return t;
-}
-
-float get_elasped_time(clock_t start, clock_t end) {
-	return (float(end - start)) / CLOCKS_PER_SEC;
 }
 
 void print_thread_info(statistics *stats) {
@@ -193,7 +189,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 		#endif
 	}
 
-	stats->start = clock();
+	stats->start = omp_get_wtime();
 
 	// Populates buckets with data
 	/*
@@ -250,7 +246,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 	stats->size_average = size_sum/bucketCount;
 	#endif
 
-	stats->mid = clock();
+	stats->mid = omp_get_wtime();
 
 	#if SECOND_PART_PARALLEL == 2
 		#if IN_OUT_SIZE_VALIDATION == 1
@@ -304,7 +300,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 			selection_sort(buckets[i]);
 		}
 
-		stats->after_sort = clock();
+		stats->after_sort = omp_get_wtime();
 
 		// Merges buckets to array
 		int insertedElements = 0;
@@ -316,7 +312,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 			}
 		}
 	#endif
-	stats->end = clock();
+	stats->end = omp_get_wtime();
 
 	for (int i = 0; i < bucketCount; i++) {
 		delete buckets[i];
@@ -402,12 +398,12 @@ int main(int argc, char* argv[]) {
 	statistics stats;
 
 	int tsN = (CALC_AVERAGE == 1) ? 1 : iterations;
-	float *bucket_filling_times = new float[tsN];
+	double *bucket_filling_times = new double[tsN];
 	#if SECOND_PART_PARALLEL < 2
-		float *sorting_times = new float[tsN];
-		float *merging_times = new float[tsN];
+		double *sorting_times = new double[tsN];
+		double *merging_times = new double[tsN];
 	#else
-		float *sorting_and_merging_times = new float[tsN];
+		double *sorting_and_merging_times = new double[tsN];
 	#endif
 
 	for (int i = 0; i < tsN; i++) {
@@ -434,12 +430,12 @@ int main(int argc, char* argv[]) {
 			print_array(unsorted, array_size);
 		#endif
 
-		float bf_time = get_elasped_time(stats.start, stats.mid);
+		double bf_time = stats.mid - stats.start;
 		#if SECOND_PART_PARALLEL < 2
-			float s_time = get_elasped_time(stats.mid, stats.after_sort);
-			float m_time = get_elasped_time(stats.after_sort, stats.end);
+			double s_time = stats.after_sort - stats.mid;
+			double m_time = stats.end - stats.after_sort;
 		#else
-			float sam_time = get_elasped_time(stats.mid, stats.end);
+			double sam_time = stats.end - stats.mid;
 		#endif
 
 		int target_index = (CALC_AVERAGE == 1) ? 0 : i;
@@ -475,16 +471,16 @@ int main(int argc, char* argv[]) {
 		#endif
 	#endif
 	for(int i = 0; i < tsN; i++) {
-		float bf_time = bucket_filling_times[i];
+		double bf_time = bucket_filling_times[i];
 		#if SECOND_PART_PARALLEL < 2
-		float s_time = sorting_times[i];
-		float m_time = merging_times[i];
-		float total = bf_time + s_time + m_time;
+		double s_time = sorting_times[i];
+		double m_time = merging_times[i];
+		double total = bf_time + s_time + m_time;
 		printf("%15d %15d %9d %25.20f %25.20f %25.20f %12.2f %25.20f\n", array_size, bucket_count, thread_num, bf_time,
 		       s_time, m_time, bf_time/total, total);
 		#else
-		float sam_time = sorting_and_merging_times[i];
-		float total = bf_time + sam_time;
+		double sam_time = sorting_and_merging_times[i];
+		double total = bf_time + sam_time;
 		printf("%15d %15d %9d %25.20f %25.20f %12.2f %25.20f\n", array_size, bucket_count, thread_num, bf_time, sam_time,
 		       bf_time/total, total);
 		#endif
