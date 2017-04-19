@@ -20,7 +20,7 @@
 #define PRINT_HEADER 1
 #define SORTED_VALIDATION 1
 #define PRINT_DETAILED_THREAD_NO 0
-#define PRINT_BUCKET_STATS 1
+#define PRINT_BUCKET_STATS 0
 
 #define VERSION "1"
 #define MAX_VALUE 1000.0
@@ -276,7 +276,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 	#else
 		// Sort all buckets
 		#if SECOND_PART_PARALLEL == 1
-		#pragma omp parallel for
+		#pragma omp parallel for schedule(dynamic, 10)
 		#endif
 		for (int i = 0; i < bucketCount; i++) {
 			#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
