@@ -13,12 +13,12 @@
 #define PRINT_ARRAY_CONTENTS 0
 #define FIRST_PART_PARALLEL 0
 #define SECOND_PART_PARALLEL 1 /* 2 - both sort & merge parallel, 1 - parallel sort & serial merge, 0 - both serial */
-#define IN_OUT_SIZE_VALIDATION 1
-#define SUM_VALIDATION 1
+#define IN_OUT_SIZE_VALIDATION 0
+#define SUM_VALIDATION 0
 #define FINE_GRAINED_LOCKING 1
 #define CALC_AVERAGE 0
 #define PRINT_HEADER 1
-#define SORTED_VALIDATION 1
+#define SORTED_VALIDATION 0
 #define PRINT_DETAILED_THREAD_NO 0
 #define PRINT_BUCKET_STATS 0
 
