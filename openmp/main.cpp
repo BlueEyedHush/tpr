@@ -20,6 +20,7 @@
 #define PRINT_HEADER 1
 #define SORTED_VALIDATION 1
 #define PRINT_DETAILED_THREAD_NO 0
+#define PRINT_BUCKET_STATS 1
 
 #define VERSION "1"
 #define MAX_VALUE 1000.0
@@ -61,6 +62,12 @@ struct statistics {
 	int first_part_thread_no[MAX_THREADS];
 	int second_part_thread_no[MAX_THREADS];
 	#endif
+
+	#if PRINT_BUCKET_STATS == 1
+	unsigned long long min_size;
+	unsigned long long max_size;
+	unsigned long long size_average;
+	#endif
 };
 
 statistics *init_stats(statistics *t) {
@@ -77,6 +84,12 @@ statistics *init_stats(statistics *t) {
 		t->first_part_thread_no[i] = 0;
 		t->second_part_thread_no[i] = 0;
 	}
+	#endif
+
+	#if PRINT_BUCKET_STATS == 1
+	t->min_size = 0;
+	t->max_size = 0;
+	t->size_average = 0;
 	#endif
 
 	return t;
@@ -111,6 +124,13 @@ void print_thread_info(statistics *stats) {
 		}
 	}
 	printf("\n");
+	#endif
+}
+
+void print_bucket_info(statistics *stats) {
+	#if PRINT_BUCKET_STATS == 1
+	printf("[BUCKET INFO] min_size: %llu, average: %llu, umax_size: %llu\n", stats->min_size, stats->size_average,
+	       stats->max_size);
 	#endif
 }
 
@@ -196,6 +216,22 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 			buckets[selectedBucket]->push_back(data[i]);
 		#endif
 	}
+
+	#if PRINT_BUCKET_STATS == 1
+	stats->min_size = buckets[0]->size();
+	stats->max_size = buckets[0]->size();
+	unsigned long long size_sum = buckets[0]->size();
+	for (int i = 0; i < bucketCount; i++) {
+		size_t bsize = buckets[i]->size();
+		if (bsize > stats->max_size) {
+			stats->max_size = bsize;
+		} else if (bsize < stats->min_size) {
+			stats->min_size = bsize;
+		}
+		size_sum += bsize;
+	}
+	stats->size_average = size_sum/bucketCount;
+	#endif
 
 	stats->mid = clock();
 
@@ -398,9 +434,8 @@ int main(int argc, char* argv[]) {
 			sorting_and_merging_times[target_index] += sam_time;
 		#endif
 
-		#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
 		print_thread_info(&stats);
-		#endif
+		print_bucket_info(&stats);
 	}
 
 	#if CALC_AVERAGE == 1
