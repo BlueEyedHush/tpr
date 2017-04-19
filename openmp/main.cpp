@@ -11,17 +11,16 @@
 
 #define PRINT_CONFIGURATION 0
 #define PRINT_ARRAY_CONTENTS 0
-#define FIRST_PART_PARALLEL 1
-#define SECOND_PART_PARALLEL 2 /* 2 - both sort & merge parallel, 1 - parallel sort & serial merge, 0 - both serial */
+#define FIRST_PART_PARALLEL 0
+#define SECOND_PART_PARALLEL 1 /* 2 - both sort & merge parallel, 1 - parallel sort & serial merge, 0 - both serial */
 #define IN_OUT_SIZE_VALIDATION 0
 #define SUM_VALIDATION 0
-#define EXTENDED_REPORTING 2 /* 1 enabled, 2 - with profiling info */
 #define FINE_GRAINED_LOCKING 1
 #define CALC_AVERAGE 0
-#define PRINT_HEADER 0
+#define PRINT_HEADER 1
 #define SORTED_VALIDATION 1
 
-#define VERSION "02ee50aad0"
+#define VERSION "1"
 #define MAX_VALUE 1000.0
 #define EPSILON 1e-6
 
@@ -50,12 +49,18 @@ static void print_array(double *data, int count) {
 typedef struct timestamps {
 	clock_t start;
 	clock_t mid;
+	#if SECOND_PART_PARALLEL < 2
+	clock_t after_sort;
+	#endif
 	clock_t end;
 } timestamps;
 
 timestamps *init_times(timestamps *t) {
 	t->start = 0;
 	t->mid = 0;
+	#if SECOND_PART_PARALLEL < 2
+	t->after_sort = 0;
+	#endif
 	t->end = 0;
 	return t;
 }
@@ -181,6 +186,8 @@ static void bucket_sort(double *data, int dataN, int bucketCount, timestamps *ou
 			sort(buckets[i]->begin(), buckets[i]->end(), pred);
 		}
 
+		out_ts->after_sort = clock();
+
 		// Merges buckets to array
 		int insertedElements = 0;
 		for (int i = 0; i < bucketCount; i++) {
@@ -269,11 +276,21 @@ int main(int argc, char* argv[]) {
 
 	int tsN = (CALC_AVERAGE == 1) ? 1 : iterations;
 	float *bucket_filling_times = new float[tsN];
-	float *sorting_and_merging_times = new float[tsN];
+	#if SECOND_PART_PARALLEL < 2
+		float *sorting_times = new float[tsN];
+		float *merging_times = new float[tsN];
+	#else
+		float *sorting_and_merging_times = new float[tsN];
+	#endif
 
 	for (int i = 0; i < tsN; i++) {
 		bucket_filling_times[i] = 0.0f;
-		sorting_and_merging_times[i] = 0.0f;
+		#if SECOND_PART_PARALLEL < 2
+			sorting_times[i] = 0.0f;
+			merging_times[i] = 0.0f;
+		#else
+			sorting_and_merging_times[i] = 0.0f;
+		#endif
 	}
 
 	for(int i = 0; i < iterations; i++) {
@@ -291,34 +308,57 @@ int main(int argc, char* argv[]) {
 		#endif
 
 		float bf_time = get_elasped_time(tmp_ts.start, tmp_ts.mid);
-		float sam_time = get_elasped_time(tmp_ts.mid, tmp_ts.end);
+		#if SECOND_PART_PARALLEL < 2
+			float s_time = get_elasped_time(tmp_ts.mid, tmp_ts.after_sort);
+			float m_time = get_elasped_time(tmp_ts.after_sort, tmp_ts.end);
+		#else
+			float sam_time = get_elasped_time(tmp_ts.mid, tmp_ts.end);
+		#endif
 
 		int target_index = (CALC_AVERAGE == 1) ? 0 : i;
 		bucket_filling_times[target_index] += bf_time;
-		sorting_and_merging_times[target_index] += sam_time;
+		#if SECOND_PART_PARALLEL < 2
+			sorting_times[target_index] += s_time;
+			merging_times[target_index] += m_time;
+		#else
+			sorting_and_merging_times[target_index] += sam_time;
+		#endif
 	}
 
 	#if CALC_AVERAGE == 1
 		bucket_filling_times[0] /= iterations;
-		sorting_and_merging_times[0] /= iterations;
+		#if SECOND_PART_PARALLEL < 2
+			sorting_times[0] /= iterations;
+			merging_times[0] /= iterations;
+		#else
+			sorting_and_merging_times[0] /= iterations;
+		#endif
 	#endif
 
 	#if PRINT_HEADER == 1
+		#if SECOND_PART_PARALLEL < 2
+		printf("%15.15s %15.15s %9.9s %25.25s %25.25s %25.25s %12.12s %25.25s\n", "ARRAY_SIZE", "#BUCKETS", "#THREADS",
+		       "T_1", "T_SORT", "T_MERGE", "T_1/T_TOTAL", "T_TOTAL");
+		#else
 		printf("%15.15s %15.15s %9.9s %25.25s %25.25s %12.12s %25.25s\n", "ARRAY_SIZE", "#BUCKETS", "#THREADS", "T_1", "T_2",
 		       "T_1/T_TOTAL", "T_TOTAL");
+		#endif
 	#endif
 	for(int i = 0; i < tsN; i++) {
 		float bf_time = bucket_filling_times[i];
+		#if SECOND_PART_PARALLEL < 2
+		float s_time = sorting_times[i];
+		float m_time = merging_times[i];
+		float total = bf_time + s_time + m_time;
+		printf("%15d %15d %9d %25.20f %25.20f %25.20f %12.2f %25.20f\n", array_size, bucket_count, thread_num, bf_time,
+		       s_time, m_time, bf_time/total, total);
+		#else
 		float sam_time = sorting_and_merging_times[i];
 		float total = bf_time + sam_time;
-		#if EXTENDED_REPORTING == 2
-			printf("%15d %15d %9d %25.20f %25.20f %12.2f %25.20f\n", array_size, bucket_count, thread_num, bf_time, sam_time,
-			       bf_time/total, total);
-		#elif EXTENDED_REPORTING == 1
-			printf("%d\t%d\t%d\t%.20f\n", array_size, bucket_count, thread_num, total);
-		#else
-			printf("%.20f\n", t.end);
+		printf("%15d %15d %9d %25.20f %25.20f %12.2f %25.20f\n", array_size, bucket_count, thread_num, bf_time, sam_time,
+		       bf_time/total, total);
 		#endif
+
 	}
 
 	delete[] unsorted;
