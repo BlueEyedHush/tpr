@@ -19,11 +19,12 @@
 #define CALC_AVERAGE 0
 #define PRINT_HEADER 1
 #define SORTED_VALIDATION 1
-#define PRINT_DETAILED_THREAD_NO 1
+#define PRINT_DETAILED_THREAD_NO 0
 
 #define VERSION "1"
 #define MAX_VALUE 1000.0
 #define EPSILON 1e-6
+#define MAX_THREADS 50
 
 using namespace std;
 
@@ -47,7 +48,7 @@ static void print_array(double *data, int count) {
 	printf("]\n");
 }
 
-typedef struct statistics {
+struct statistics {
 	clock_t start;
 	clock_t mid;
 	#if SECOND_PART_PARALLEL < 2
@@ -55,10 +56,10 @@ typedef struct statistics {
 	#endif
 	clock_t end;
 
-	#if PRINT_DETAILED_THREAD_NO == 1
-	int init_thread_no;
-	int first_part_thread_no;
-	int second_part_thread_no;
+	#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
+	int init_thread_no[MAX_THREADS];
+	int first_part_thread_no[MAX_THREADS];
+	int second_part_thread_no[MAX_THREADS];
 	#endif
 };
 
@@ -70,10 +71,12 @@ statistics *init_stats(statistics *t) {
 	#endif
 	t->end = 0;
 
-	#if PRINT_DETAILED_THREAD_NO == 1
-	t->init_thread_no = -2;
-	t->first_part_thread_no = -2;
-	t->second_part_thread_no = -2;
+	#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
+	for (int i = 0; i < MAX_THREADS; i++) {
+		t->init_thread_no[i] = 0;
+		t->first_part_thread_no[i] = 0;
+		t->second_part_thread_no[i] = 0;
+	}
 	#endif
 
 	return t;
@@ -81,6 +84,34 @@ statistics *init_stats(statistics *t) {
 
 float get_elasped_time(clock_t start, clock_t end) {
 	return (float(end - start)) / CLOCKS_PER_SEC;
+}
+
+void print_thread_info(statistics *stats) {
+	#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
+	printf("[THREAD STATS] /* (#threads -> #occurences) */");
+	printf("\ninit: ");
+	for (int i = 0; i < MAX_THREADS; i++) {
+		int count = stats->init_thread_no[i];
+		if(count > 0) {
+			printf("%d -> %d, ", i, count);
+		}
+	}
+	printf("\nfirst: ");
+	for (int i = 0; i < MAX_THREADS; i++) {
+		int count = stats->first_part_thread_no[i];
+		if(count > 0) {
+			printf("%d -> %d, ", i, count);
+		}
+	}
+	printf("\nsecond: ");
+	for (int i = 0; i < MAX_THREADS; i++) {
+		int count = stats->second_part_thread_no[i];
+		if(count > 0) {
+			printf("%d -> %d, ", i, count);
+		}
+	}
+	printf("\n");
+	#endif
 }
 
 short verify_sorted(double *array, int size) {
@@ -113,8 +144,9 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 	#pragma omp parallel for
 	#endif
 	for (int i = 0; i < bucketCount; i++) {
-		#if PRINT_DETAILED_THREAD_NO == 1
-		stats->init_thread_no = omp_get_thread_num();
+		#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
+			#pragma omp atomic update
+			stats->init_thread_no[omp_get_num_threads()]++;
 		#endif
 
 		buckets[i] = new vector<double>();
@@ -145,8 +177,9 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 	#pragma omp parallel for
 	#endif
 	for (int i = 0; i < dataN; i++) {
-		#if PRINT_DETAILED_THREAD_NO == 1
-		stats->first_part_thread_no = omp_get_thread_num();
+		#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
+			#pragma omp atomic update
+			stats->first_part_thread_no[omp_get_num_threads()]++;
 		#endif
 
 		int selectedBucket = int ((data[i] * bucketCount) / (MAX_VALUE+1));
@@ -174,8 +207,9 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 		#pragma omp parallel for
 		for (int i = 0; i < bucketCount; i++)
 		{
-			#if PRINT_DETAILED_THREAD_NO == 1
-			stats->second_part_thread_no = omp_get_thread_num();
+			#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
+				#pragma omp atomic update
+				stats->second_part_thread_no[omp_get_num_threads()]++;
 			#endif
 
 			// sort bucket
@@ -209,8 +243,9 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 		#pragma omp parallel for
 		#endif
 		for (int i = 0; i < bucketCount; i++) {
-			#if PRINT_DETAILED_THREAD_NO == 1
-			stats->second_part_thread_no = omp_get_thread_num();
+			#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
+				#pragma omp atomic update
+				stats->second_part_thread_no[omp_get_num_threads()]++;
 			#endif
 
 			sort(buckets[i]->begin(), buckets[i]->end(), pred);
@@ -281,6 +316,13 @@ int main(int argc, char* argv[]) {
 		printf("Usage: executable <array_size> <bucket_count> <seed> <iterations>\n");
 		return 1;
 	}
+
+	#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
+	int omp_max_threads = omp_get_max_threads();
+	if (omp_max_threads > MAX_THREADS) {
+		printf("[ERROR] omp_max_threads (%d) > MAX_THREADS", omp_max_threads);
+	}
+	#endif
 
 	int array_size = atoi(argv[1]);
 	int bucket_count = atoi(argv[2]);
@@ -356,9 +398,8 @@ int main(int argc, char* argv[]) {
 			sorting_and_merging_times[target_index] += sam_time;
 		#endif
 
-		#if PRINT_DETAILED_THREAD_NO == 1
-		printf("[THREAD STATS] init: %d, first_part: %d, second_part: %d\n", stats.init_thread_no,
-		       stats.first_part_thread_no, stats.second_part_thread_no);
+		#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
+		print_thread_info(&stats);
 		#endif
 	}
 

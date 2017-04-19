@@ -9,4 +9,5 @@ while [ ! -z "$RESULT" ]; do
     RESULT=`qstat | grep $USER`
     sleep 10
 done
+sleep 10
 { date; cat "$DIR"/${USER}sort.o*; } | mail -s "results" "knawara112@gmail.com"
