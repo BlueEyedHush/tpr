@@ -3,11 +3,11 @@
 # miscellaneous constants
 RESULT_FILE=results.out
 
-BUCKETS="100000"
-THREADS="1 4 8 12"
-SIZES="10000000"
-ITERATIONS=3
-SEEDS=5
+BUCKETS="1000000"
+THREADS="4 8 12"
+SIZES="100000000"
+ITERATIONS=1
+SEEDS=7892773
 
 if [ -z $1 ]; then
     echo "Username (without plg prefix) must be passed as first argument"
