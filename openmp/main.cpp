@@ -11,7 +11,8 @@
 
 #define PRINT_CONFIGURATION 0
 #define PRINT_ARRAY_CONTENTS 0
-#define MERGING_PARALLEL 1
+#define FIRST_PART_PARALLEL 1
+#define SECOND_PART_PARALLEL 2 /* 2 - both sort & merge parallel, 1 - parallel sort & serial merge, 0 - both serial */
 #define IN_OUT_SIZE_VALIDATION 0
 #define SUM_VALIDATION 0
 #define EXTENDED_REPORTING 2 /* 1 enabled, 2 - with profiling info */
@@ -78,11 +79,13 @@ static void bucket_sort(double *data, int dataN, int bucketCount, timestamps *ou
 	#endif
 
 	// Creates all buckets
+	#if FIRST_PART_PARALLEL == 1
 	#pragma omp parallel for
+	#endif
 	for (int i = 0; i < bucketCount; i++) {
 		buckets[i] = new vector<double>();
 
-		#if defined(_OPENMP) && FINE_GRAINED_LOCKING == 1
+		#if defined(_OPENMP) && FIRST_PART_PARALLEL == 1 && FINE_GRAINED_LOCKING == 1
 		omp_init_lock(&(locks[i]));
 		#endif
 	}
@@ -104,10 +107,12 @@ static void bucket_sort(double *data, int dataN, int bucketCount, timestamps *ou
 	 * Solution: increase maxValue by 1
 	 * */
 
+	#if FIRST_PART_PARALLEL == 1
 	#pragma omp parallel for
+	#endif
 	for (int i = 0; i < dataN; i++) {
 		int selectedBucket = int ((data[i] * bucketCount) / (MAX_VALUE+1));
-		#if defined(_OPENMP)
+		#if defined(_OPENMP) && FIRST_PART_PARALLEL == 1
 			#if FINE_GRAINED_LOCKING == 1
 				omp_set_lock(&(locks[selectedBucket]));
 				buckets[selectedBucket]->push_back(data[i]);
@@ -123,7 +128,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, timestamps *ou
 
 	out_ts->mid = clock();
 
-	#if MERGING_PARALLEL == 1
+	#if SECOND_PART_PARALLEL == 2
 		#if IN_OUT_SIZE_VALIDATION == 1
 			int insertedElements = 0;
 		#endif
@@ -157,8 +162,10 @@ static void bucket_sort(double *data, int dataN, int bucketCount, timestamps *ou
 			}
 		}
 	#else
-		#pragma omp parallel for
 		// Sort all buckets
+		#if SECOND_PART_PARALLEL == 1
+		#pragma omp parallel for
+		#endif
 		for (int i = 0; i < bucketCount; i++) {
 			sort(buckets[i]->begin(), buckets[i]->end(), pred);
 		}
@@ -177,11 +184,11 @@ static void bucket_sort(double *data, int dataN, int bucketCount, timestamps *ou
 
 	for (int i = 0; i < bucketCount; i++) {
 		delete buckets[i];
-		#if defined(_OPENMP) && FINE_GRAINED_LOCKING == 1
+		#if defined(_OPENMP) && FIRST_PART_PARALLEL == 1 && FINE_GRAINED_LOCKING == 1
 			omp_destroy_lock(&(locks[i]));
 		#endif
 	}
-	#if defined(_OPENMP) && FINE_GRAINED_LOCKING == 1
+	#if defined(_OPENMP) && FIRST_PART_PARALLEL == 1 && FINE_GRAINED_LOCKING == 1
 		delete[] locks;
 	#endif
 	delete[] buckets;
