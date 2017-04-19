@@ -21,13 +21,30 @@
 #define SORTED_VALIDATION 0
 #define PRINT_DETAILED_THREAD_NO 0
 #define PRINT_BUCKET_STATS 0
+#define USE_WALLTIME 1 /* 1 - walltime, 0 - cpu time */
 
 #define VERSION "1"
 #define MAX_VALUE 1000.0
 #define EPSILON 1e-6
 #define MAX_THREADS 50
 
+
 using namespace std;
+
+/* timing */
+#if USE_WALLTIME == 1
+	#define TS_TYPE double
+	#define TS_INIT 0.0f
+	#define TIMESTAMP() omp_get_wtime()
+	/* must return double value, in seconds */
+	#define TS_DIFF(TS1, TS2) TS2 - TS1
+#else
+	#define TS_TYPE clock_t
+	#define TS_INIT 0
+	#define TIMESTAMP() clock()
+	/* must return double value, in seconds */
+	#define TS_DIFF(TS1, TS2) ((float(TS2 - TS1)) / CLOCKS_PER_SEC)
+#endif
 
 void selection_sort(std::vector<double> *vec) {
 	double tmp = 0.0;
@@ -67,12 +84,12 @@ static void print_array(double *data, int count) {
 }
 
 struct statistics {
-	double start;
-	double mid;
+	TS_TYPE start;
+	TS_TYPE mid;
 	#if SECOND_PART_PARALLEL < 2
-	double after_sort;
+	TS_TYPE after_sort;
 	#endif
-	double end;
+	TS_TYPE end;
 
 	#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
 	int init_thread_no[MAX_THREADS];
@@ -88,12 +105,12 @@ struct statistics {
 };
 
 statistics *init_stats(statistics *t) {
-	t->start = 0;
-	t->mid = 0;
+	t->start = TS_INIT;
+	t->mid = TS_INIT;
 	#if SECOND_PART_PARALLEL < 2
-	t->after_sort = 0;
+	t->after_sort = TS_INIT;
 	#endif
-	t->end = 0;
+	t->end = TS_INIT;
 
 	#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
 	for (int i = 0; i < MAX_THREADS; i++) {
@@ -168,7 +185,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 
 	/* array of pointer to buckets */
 	vector<double> **buckets = new vector<double> *[bucketCount];
-	#if defined(_OPENMP)
+	#if defined(_OPENMP) && FIRST_PART_PARALLEL == 1 && FINE_GRAINED_LOCKING == 1
 	omp_lock_t *locks = new omp_lock_t[bucketCount];
 	#endif
 
@@ -189,7 +206,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 		#endif
 	}
 
-	stats->start = omp_get_wtime();
+	stats->start = TIMESTAMP();
 
 	// Populates buckets with data
 	/*
@@ -246,7 +263,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 	stats->size_average = size_sum/bucketCount;
 	#endif
 
-	stats->mid = omp_get_wtime();
+	stats->mid = TIMESTAMP();
 
 	#if SECOND_PART_PARALLEL == 2
 		#if IN_OUT_SIZE_VALIDATION == 1
@@ -300,7 +317,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 			selection_sort(buckets[i]);
 		}
 
-		stats->after_sort = omp_get_wtime();
+		stats->after_sort = TIMESTAMP();
 
 		// Merges buckets to array
 		int insertedElements = 0;
@@ -312,7 +329,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 			}
 		}
 	#endif
-	stats->end = omp_get_wtime();
+	stats->end = TIMESTAMP();
 
 	for (int i = 0; i < bucketCount; i++) {
 		delete buckets[i];
@@ -430,12 +447,12 @@ int main(int argc, char* argv[]) {
 			print_array(unsorted, array_size);
 		#endif
 
-		double bf_time = stats.mid - stats.start;
+		double bf_time = TS_DIFF(stats.start, stats.mid);
 		#if SECOND_PART_PARALLEL < 2
-			double s_time = stats.after_sort - stats.mid;
-			double m_time = stats.end - stats.after_sort;
+			double s_time = TS_DIFF(stats.mid, stats.after_sort);
+			double m_time = TS_DIFF(stats.after_sort, stats.end);
 		#else
-			double sam_time = stats.end - stats.mid;
+			double sam_time = TS_DIFF(stats.mid, stats.end);
 		#endif
 
 		int target_index = (CALC_AVERAGE == 1) ? 0 : i;
