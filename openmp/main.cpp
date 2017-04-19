@@ -16,8 +16,9 @@
 #define SUM_VALIDATION 0
 #define EXTENDED_REPORTING 2 /* 1 enabled, 2 - with profiling info */
 #define FINE_GRAINED_LOCKING 1
-#define CALC_AVERAGE 1
+#define CALC_AVERAGE 0
 #define PRINT_HEADER 0
+#define SORTED_VALIDATION 1
 
 #define VERSION "02ee50aad0"
 #define MAX_VALUE 1000.0
@@ -218,6 +219,17 @@ double *generate_random_array(int size, double from, double to, int seed) {
 	return arr;
 }
 
+short verify_sorted(double *array, int size) {
+	short not_sorted = 0;
+	for (int i = 0; i < size-1 && not_sorted == 0; i++) {
+		if (array[i] > array[i+1]) {
+			printf("[ERROR] not sorted, encountered problem at position %d", i);
+			not_sorted = 1;
+		}
+	}
+	return (short) (1 - not_sorted);
+}
+
 int main(int argc, char* argv[]) {
 	if(argc < 5) {
 		printf("Usage: executable <array_size> <bucket_count> <seed> <iterations>\n");
@@ -254,6 +266,9 @@ int main(int argc, char* argv[]) {
 	init_times(&tmp_ts);
 	// first iteration, non-timed (warmup)
 	bucket_sort(unsorted, array_size, bucket_count, &tmp_ts);
+	#if SORTED_VALIDATION == 1
+		verify_sorted(unsorted, array_size);
+	#endif
 
 	// timed iterations
 	int tsN = (CALC_AVERAGE == 1) ? 1 : iterations;
