@@ -64,6 +64,17 @@ float get_elasped_time(clock_t start, clock_t end) {
 	return (float(end - start)) / CLOCKS_PER_SEC;
 }
 
+short verify_sorted(double *array, int size) {
+	short not_sorted = 0;
+	for (int i = 0; i < size-1 && not_sorted == 0; i++) {
+		if (array[i] > array[i+1]) {
+			printf("[ERROR] not sorted, encountered problem at position %d", i);
+			not_sorted = 1;
+		}
+	}
+	return (short) (1 - not_sorted);
+}
+
 static void bucket_sort(double *data, int dataN, int bucketCount, timestamps *out_ts) {
 	#if SUM_VALIDATION == 1
 		long double sum_before_sorting = 0.0;
@@ -210,6 +221,10 @@ static void bucket_sort(double *data, int dataN, int bucketCount, timestamps *ou
 			printf("[ERROR] sums before and after differ by (%Lf.10) !!!\n", diff);
 		}
 	#endif
+
+	#if SORTED_VALIDATION == 1
+		verify_sorted(data, dataN);
+	#endif
 }
 
 
@@ -222,17 +237,6 @@ void fill_array(double *array, int size, double from, double to, int seed) {
 	for (int i = 0; i < size; i++) {
 		array[i] = uni(rng);
 	}
-}
-
-short verify_sorted(double *array, int size) {
-	short not_sorted = 0;
-	for (int i = 0; i < size-1 && not_sorted == 0; i++) {
-		if (array[i] > array[i+1]) {
-			printf("[ERROR] not sorted, encountered problem at position %d", i);
-			not_sorted = 1;
-		}
-	}
-	return (short) (1 - not_sorted);
 }
 
 int main(int argc, char* argv[]) {
@@ -284,10 +288,6 @@ int main(int argc, char* argv[]) {
 
 		#if PRINT_ARRAY_CONTENTS == 1
 			print_array(unsorted, array_size);
-		#endif
-
-		#if SORTED_VALIDATION == 1
-			verify_sorted(unsorted, array_size);
 		#endif
 
 		float bf_time = get_elasped_time(tmp_ts.start, tmp_ts.mid);
