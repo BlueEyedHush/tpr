@@ -13,8 +13,8 @@
 #define PRINT_ARRAY_CONTENTS 0
 #define FIRST_PART_PARALLEL 0
 #define SECOND_PART_PARALLEL 1 /* 2 - both sort & merge parallel, 1 - parallel sort & serial merge, 0 - both serial */
-#define IN_OUT_SIZE_VALIDATION 0
-#define SUM_VALIDATION 0
+#define IN_OUT_SIZE_VALIDATION 1
+#define SUM_VALIDATION 1
 #define FINE_GRAINED_LOCKING 1
 #define CALC_AVERAGE 0
 #define PRINT_HEADER 1
@@ -29,9 +29,26 @@
 
 using namespace std;
 
-struct predicate {
-	bool operator()(double i, double j) { return (i < j); }
-} pred;
+void selection_sort(std::vector<double> *vec) {
+	double tmp = 0.0;
+	for (size_t i = 0; i+1 < vec->size(); i++) {
+
+		/* find smallest element in slice [i:] and swap with i-th element */
+		double min = vec->at(i);
+		size_t min_idx = i;
+		for (size_t j = i+1; j < vec->size(); j++) {
+			if (vec->at(j) < min) {
+				min = vec->at(j);
+				min_idx = j;
+			}
+		}
+
+		/* swap elements */
+		tmp = vec->at(i);
+		vec->at(i) = vec->at(min_idx);
+		vec->at(min_idx) = tmp;
+	}
+}
 
 //Prints array
 // Parameters:
@@ -249,7 +266,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 			#endif
 
 			// sort bucket
-			sort(buckets[i]->begin(), buckets[i]->end(), pred);
+			selection_sort(buckets[i]);
 
 			// Merges buckets to array
 			size_t currBucketSize = buckets[i]->size();
@@ -284,7 +301,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 				stats->second_part_thread_no[omp_get_num_threads()]++;
 			#endif
 
-			sort(buckets[i]->begin(), buckets[i]->end(), pred);
+			selection_sort(buckets[i]);
 		}
 
 		stats->after_sort = clock();
