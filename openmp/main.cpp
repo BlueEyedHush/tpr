@@ -206,17 +206,15 @@ static void bucket_sort(double *data, int dataN, int bucketCount, timestamps *ou
 }
 
 
-double *generate_random_array(int size, double from, double to, int seed) {
+void fill_array(double *array, int size, double from, double to, int seed) {
 
 	std::seed_seq seed_sequence = {seed};
 	std::mt19937 rng(seed_sequence);
 	std::uniform_real_distribution<double> uni(from, to);
 
-	double *arr = new double[size];
 	for (int i = 0; i < size; i++) {
-		arr[i] = uni(rng);
+		array[i] = uni(rng);
 	}
-	return arr;
 }
 
 short verify_sorted(double *array, int size) {
@@ -255,7 +253,9 @@ int main(int argc, char* argv[]) {
 		       array_size, bucket_count, rand_seed, iterations, thread_num);
 	#endif
 
-	double *unsorted = generate_random_array(array_size, 1, MAX_VALUE, rand_seed);
+
+	double *unsorted = new double[array_size];
+	fill_array(unsorted, array_size, 1, MAX_VALUE, rand_seed);
 
 	#if PRINT_ARRAY_CONTENTS == 1
 		print_array(unsorted, array_size);
@@ -283,6 +283,13 @@ int main(int argc, char* argv[]) {
 
 	for(int i = 0; i < iterations; i++) {
 		init_times(&tmp_ts);
+		fill_array(unsorted, array_size, 1, MAX_VALUE, rand_seed);
+
+		#if PRINT_ARRAY_CONTENTS == 1
+			print_array(unsorted, array_size);
+			printf("\n");
+		#endif
+
 		bucket_sort(unsorted, array_size, bucket_count, &tmp_ts);
 
 		float bf_time = get_elasped_time(tmp_ts.start, tmp_ts.mid);
