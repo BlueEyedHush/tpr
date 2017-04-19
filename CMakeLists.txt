@@ -32,3 +32,6 @@ endif()
 
 set(OPENMP_FILES openmp/main.cpp)
 add_executable(openmp ${OPENMP_FILES})
+
+set(PREPROC_OPENMP_FILES openmp/preprocessed.cpp)
+add_executable(preproc_openmp ${PREPROC_OPENMP_FILES})
