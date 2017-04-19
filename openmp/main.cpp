@@ -43,7 +43,7 @@ static void print_array(double *data, int count) {
 			printf("%f", data[i]);
 		}
 
-	printf("]");
+	printf("]\n");
 }
 
 typedef struct timestamps {
@@ -271,10 +271,13 @@ int main(int argc, char* argv[]) {
 
 		#if PRINT_ARRAY_CONTENTS == 1
 			print_array(unsorted, array_size);
-			printf("\n");
 		#endif
 
 		bucket_sort(unsorted, array_size, bucket_count, &tmp_ts);
+
+		#if PRINT_ARRAY_CONTENTS == 1
+			print_array(unsorted, array_size);
+		#endif
 
 		#if SORTED_VALIDATION == 1
 			verify_sorted(unsorted, array_size);
@@ -310,10 +313,6 @@ int main(int argc, char* argv[]) {
 			printf("%.20f\n", t.end);
 		#endif
 	}
-
-	#if PRINT_ARRAY_CONTENTS == 1
-		print_array(unsorted, array_size);
-	#endif
 
 	delete[] unsorted;
 	return 0;
