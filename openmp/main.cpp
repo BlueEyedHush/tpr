@@ -16,7 +16,7 @@
 #define IN_OUT_SIZE_VALIDATION 0
 #define SUM_VALIDATION 0
 #define FINE_GRAINED_LOCKING 1
-#define CALC_AVERAGE 1
+#define CALC_AVERAGE 0
 #define PRINT_HEADER 1
 #define SORTED_VALIDATION 1
 #define PRINT_DETAILED_THREAD_NO 1
@@ -288,6 +288,8 @@ int main(int argc, char* argv[]) {
 	int iterations = atoi(argv[4]);
 
 	#if defined(_OPENMP)
+		omp_set_dynamic(0);
+
 		int thread_num = -2;
 		#pragma omp parallel
 		thread_num =  omp_get_num_threads();
