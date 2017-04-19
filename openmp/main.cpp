@@ -253,24 +253,9 @@ int main(int argc, char* argv[]) {
 		       array_size, bucket_count, rand_seed, iterations, thread_num);
 	#endif
 
-
 	double *unsorted = new double[array_size];
-	fill_array(unsorted, array_size, 1, MAX_VALUE, rand_seed);
-
-	#if PRINT_ARRAY_CONTENTS == 1
-		print_array(unsorted, array_size);
-		printf("\n");
-	#endif
-
 	timestamps tmp_ts;
-	init_times(&tmp_ts);
-	// first iteration, non-timed (warmup)
-	bucket_sort(unsorted, array_size, bucket_count, &tmp_ts);
-	#if SORTED_VALIDATION == 1
-		verify_sorted(unsorted, array_size);
-	#endif
 
-	// timed iterations
 	int tsN = (CALC_AVERAGE == 1) ? 1 : iterations;
 	float *bucket_filling_times = new float[tsN];
 	float *sorting_and_merging_times = new float[tsN];
@@ -278,7 +263,6 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < tsN; i++) {
 		bucket_filling_times[i] = 0.0f;
 		sorting_and_merging_times[i] = 0.0f;
-
 	}
 
 	for(int i = 0; i < iterations; i++) {
@@ -291,6 +275,10 @@ int main(int argc, char* argv[]) {
 		#endif
 
 		bucket_sort(unsorted, array_size, bucket_count, &tmp_ts);
+
+		#if SORTED_VALIDATION == 1
+			verify_sorted(unsorted, array_size);
+		#endif
 
 		float bf_time = get_elasped_time(tmp_ts.start, tmp_ts.mid);
 		float sam_time = get_elasped_time(tmp_ts.mid, tmp_ts.end);
