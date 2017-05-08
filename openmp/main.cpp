@@ -12,12 +12,12 @@
 #define PRINT_CONFIGURATION 0
 #define PRINT_ARRAY_CONTENTS 0
 #define FIRST_PART_PARALLEL 1
-#define SECOND_PART_PARALLEL 2 /* 2 - both sort & merge parallel, 1 - parallel sort & serial merge, 0 - both serial */
+#define SECOND_PART_PARALLEL 1 /* 2 - both sort & merge parallel, 1 - parallel sort & serial merge, 0 - both serial */
 #define IN_OUT_SIZE_VALIDATION 0
 #define SUM_VALIDATION 0
 #define FINE_GRAINED_LOCKING 1
 #define CALC_AVERAGE 0
-#define PRINT_HEADER 1
+#define PRINT_HEADER 0
 #define SORTED_VALIDATION 0
 #define PRINT_DETAILED_THREAD_NO 0
 #define PRINT_BUCKET_STATS 0
@@ -174,7 +174,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 
 	// Creates all buckets
 	#if FIRST_PART_PARALLEL == 1
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(static)
 	#endif
 	for (int i = 0; i < bucketCount; i++) {
 		#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
@@ -207,7 +207,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 	 * */
 
 	#if FIRST_PART_PARALLEL == 1
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(static)
 	#endif
 	for (int i = 0; i < dataN; i++) {
 		#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
@@ -253,7 +253,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 			int insertedElements = 0;
 		#endif
 
-		#pragma omp parallel for
+		#pragma omp parallel for schedule(static)
 		for (int i = 0; i < bucketCount; i++)
 		{
 			#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)
@@ -289,7 +289,7 @@ static void bucket_sort(double *data, int dataN, int bucketCount, statistics *st
 	#else
 		// Sort all buckets
 		#if SECOND_PART_PARALLEL == 1
-		#pragma omp parallel for schedule(dynamic, 10)
+		#pragma omp parallel for schedule(static)
 		#endif
 		for (int i = 0; i < bucketCount; i++) {
 			#if PRINT_DETAILED_THREAD_NO == 1 && defined(_OPENMP)

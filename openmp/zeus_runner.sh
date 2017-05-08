@@ -10,7 +10,7 @@ if [ ! -z $TPR_USER ]; then
     USER=$TPR_USER
 fi
 
-CMD="qsub -q plgrid-testing -l walltime=0:15:00 -l mem=2gb -l nodes=1:ppn=12 -N ${USER}sort -A plg${USER}2017a -F $USER $DIR/benchmark.sh"
+CMD="qsub -q plgrid-testing -l walltime=1:00:00 -l mem=2gb -l nodes=1:ppn=12 -N ${USER}sort -A plg${USER}2017a -F $USER $DIR/benchmark.sh"
 echo "$CMD"
 $CMD
 
